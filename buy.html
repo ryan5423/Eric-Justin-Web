@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>選購 </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #fff; color: #1d1d1f; padding-top: 60px; }
+        .nav-buy { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-bottom: 0.5px solid #d2d2d7; }
+        
+        /* 圖片滾動容器 */
+        .slider-wrapper { position: relative; width: 100%; }
+        .slider-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .slider-container::-webkit-scrollbar { display: none; }
+        
+        .slide { flex: 0 0 100%; scroll-snap-align: start; display: flex; justify-content: center; padding: 0 10px; }
+
+        .product-img {
+            width: 100%;
+            max-height: 45vh;
+            object-fit: contain;
+            border-radius: 32px;
+            background: #f5f5f7;
+        }
+
+        @media (min-width: 768px) {
+            .image-box { position: sticky; top: 100px; height: 80vh; }
+            .product-img { max-height: 65vh; }
+        }
+
+        /* 左右按鈕 */
+        .nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 40px; height: 40px; background: rgba(210, 210, 217, 0.5);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 20; border: none;
+        }
+        .nav-btn:hover { background: rgba(180, 180, 187, 0.8); }
+        .nav-btn.prev { left: 10px; }
+        .nav-btn.next { right: 10px; }
+
+        /* 選項卡片 */
+        .option-card { border: 1px solid #d2d2d7; border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .option-card.active { border: 2px solid #0071e3; padding: calc(1.5rem - 1px); }
+
+        /* 購物袋側欄修正 */
+        #cart-sidebar { 
+            transform: translateX(100%); 
+            transition: transform 0.4s cubic-bezier(0.32, 1, 0.23, 1); 
+        }
+        #cart-sidebar.open { transform: translateX(0); }
+        
+        .dot-indicator { width: 8px; height: 8px; background: #d2d2d7; border-radius: 50%; margin: 0 4px; transition: 0.3s; }
+        .dot-indicator.active { background: #86868b; width: 20px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-buy fixed top-0 w-full z-50 px-6 py-3 flex justify-between items-center">
+         <a href="index.html" class="flex items-center">
+    <img src="photo\S__38223874.jpg" alt="Eric Justin" class="h-5 w-auto object-contain">
+     <span class="ml-2 text-sm font-semibold tracking-tight text-black">Eric Justin</span>
+            </a>
+        <button onclick="openCart()" class="relative p-2">🛒 <span id="dot" class="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full hidden"></span></button>
+    </nav>
+
+    <main class="max-w-screen-xl mx-auto px-6 md:grid md:grid-cols-2 md:gap-16">
+        <div class="image-box py-6">
+            <div class="slider-wrapper group">
+                <button class="nav-btn prev" onclick="moveSlide(-1)">❮</button>
+                <button class="nav-btn next" onclick="moveSlide(1)">❯</button>
+                <div class="slider-container" id="slider">
+                    <div class="slide"><img class="product-img" src="photo\仍然.png"></div>
+                    <div class="slide"><img class="product-img" src="photo\Cormnt.png"></div>
+                    <div class="slide"><img class="product-img" src="photo\30分鐘.png"></div>
+                </div>
+            </div>
+            <div class="flex justify-center mt-6" id="dots-container">
+                <div class="dot-indicator active"></div>
+                <div class="dot-indicator"></div>
+                <div class="dot-indicator"></div>
+            </div>
+        </div>
+
+        <div class="py-10 space-y-12 pb-32">
+            <header>
+                <h1 class="text-4xl font-bold mb-2 tracking-tight">選購 精緻小卡</h1>
+                <p class="text-gray-500">NT$ 10 起</p>
+            </header>
+
+            <section>
+                <h3 class="font-bold mb-4 text-xs text-gray-400 uppercase tracking-widest">品項</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="option-card p-6 text-center active" onclick="sel(this, '單張')">
+                        <div class="w-8 h-8 bg-zinc-800 rounded-full mx-auto mb-2 shadow-inner"></div>
+                        <p class="text-xs font-semibold">單張</p>
+                    </div>
+                    <div class="option-card p-6 text-center" onclick="sel(this, '卡包')">
+                        <div class="w-8 h-8 bg-stone-300 rounded-full mx-auto mb-2 shadow-inner"></div>
+                        <p class="text-xs font-semibold">卡包</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="font-bold mb-4 text-xs text-gray-400 uppercase tracking-widest">大小</h3>
+                <div class="space-y-4">
+                    <div class="option-card p-6 flex justify-between items-center active" onclick="sel(this, '正常', 10)">
+                        <span class="font-bold text-lg">正常</span><span class="text-sm">NT$ 10起</span>
+                    </div>
+                    <div class="option-card p-6 flex justify-between items-center" onclick="sel(this, '迷你', 5)">
+                        <span class="font-bold text-lg">迷你</span><span class="text-sm">NT$ 5起</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="hidden md:block pt-10">
+                <button onclick="add()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-500 transition shadow-xl">
+                    加入購物袋
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t p-6 flex justify-between items-center z-50">
+        <p id="m-price" class="font-bold text-xl">NT$ 10</p>
+        <button onclick="add()" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold active:scale-95 transition">加入購物袋</button>
+    </div>
+
+    <div id="overlay" class="fixed inset-0 bg-black/40 hidden z-[100]" onclick="closeCart()"></div>
+    <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full md:w-[420px] bg-white z-[200] p-10 flex flex-col shadow-2xl">
+        <div class="flex justify-between items-center mb-10">
+            <h2 class="text-3xl font-bold">購物袋</h2>
+            <button onclick="closeCart()" class="text-2xl hover:opacity-50 transition">✕</button>
+        </div>
+        <div id="cart-list" class="flex-grow overflow-y-auto space-y-6">
+            </div>
+        <div class="border-t pt-8 mt-8">
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-gray-500">總計</span>
+                <span id="cart-total" class="text-2xl font-bold">NT$ 0</span>
+            </div>
+            <button class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-500 transition">
+                結帳
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let cur = { color: '單張', price: 10, storage: '正常' };
+        let bag = [];
+        const slider = document.getElementById('slider');
+        const dots = document.querySelectorAll('.dot-indicator');
+
+        function moveSlide(direction) {
+            const scrollAmount = slider.clientWidth;
+            slider.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        }
+
+        slider.addEventListener('scroll', () => {
+            const index = Math.round(slider.scrollLeft / slider.clientWidth);
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+        });
+
+        function sel(el, val, p) {
+            const section = el.parentElement;
+            section.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            
+            if(p) { 
+                cur.price = p; 
+                cur.storage = val;
+                document.getElementById('m-price').innerText = `NT$ ${p.toLocaleString()}`; 
+            } else {
+                cur.color = val;
+            }
+        }
+
+        // 購物車顯示控制 (修正關鍵：區分開關與開啟)
+        function openCart() {
+            document.getElementById('cart-sidebar').classList.add('open');
+            document.getElementById('overlay').classList.remove('hidden');
+        }
+
+        function closeCart() {
+            document.getElementById('cart-sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.add('hidden');
+        }
+
+        function add() {
+            bag.push({...cur});
+            document.getElementById('dot').classList.remove('hidden');
+            
+            // 更新清單
+            const list = document.getElementById('cart-list');
+            list.innerHTML = bag.map((item, index) => `
+                <div class='flex justify-between items-start border-b pb-6'>
+                    <div>
+                        <p class='font-bold text-lg'>精緻小卡</p>
+                        <p class='text-sm text-gray-500'>${item.color} - ${item.storage}</p>
+                        <button onclick="remove(${index})" class="text-blue-500 text-xs mt-2">移除</button>
+                    </div>
+                    <p class='font-bold'>NT$ ${item.price.toLocaleString()}</p>
+                </div>
+            `).join('');
+
+            // 更新總價
+            const total = bag.reduce((sum, i) => sum + i.price, 0);
+            document.getElementById('cart-total').innerText = `NT$ ${total.toLocaleString()}`;
+
+            openCart(); // 強制顯示購物袋，不會再因為重複點擊而消失
+        }
+
+        function remove(index) {
+            bag.splice(index, 1);
+            if(bag.length === 0) document.getElementById('dot').classList.add('hidden');
+            add(); // 重新渲染，add 內含 openCart
+        }
+    </script>
+</body>
+</html>
