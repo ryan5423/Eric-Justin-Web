@@ -5,49 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>所有商品 | Eric Justin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: -apple-system, sans-serif; background: #fff; color: #1d1d1f; padding-top: 80px; }
         .nav-glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid #d2d2d7; }
         
-        /* 商品卡片動畫 */
-        .product-card {
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .product-card:hover {
-            transform: translateY(-8px);
-        }
+        .product-card { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 只有正常販售的卡片才有懸浮效果 */
+        .active-card:hover { transform: translateY(-8px); }
 
-        /* 圖片容器：強制正方形且圓角 */
-        .img-container {
-            background: #f5f5f7;
-            border-radius: 24px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            aspect-ratio: 1 / 1;
-            transition: background 0.3s;
-        }
-        .product-card:hover .img-container {
-            background: #ebebe7;
-        }
-        .img-container img {
-            width: 85%;
-            height: 85%;
-            object-fit: contain;
-            transition: transform 0.5s ease;
-        }
-        .product-card:hover img {
-            transform: scale(1.08);
-        }
+        .img-container { background: #f5f5f7; border-radius: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; }
+        .img-container img { width: 85%; height: 85%; object-fit: contain; transition: transform 0.5s ease; }
+        .active-card:hover img { transform: scale(1.08); }
+
+        /* 灰色邏輯：當 status 為 false 時套用 */
+        .is-disabled { opacity: 0.5; filter: grayscale(100%); pointer-events: none; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
     <nav class="nav-glass fixed top-0 w-full z-50 px-6 py-3 flex justify-between items-center h-[52px]">
         <a href="index.html" class="flex items-center group">
-            <img src="photo/S__38223874.jpg" alt="Logo" 
-                 class="w-7 h-7 rounded-full object-cover ring-1 ring-black/5 group-hover:ring-black/20 transition">
+            <img src="photo/S__38223874.jpg" alt="Logo" class="w-7 h-7 rounded-full object-cover ring-1 ring-black/5">
             <span class="ml-2.5 text-sm font-semibold tracking-tight">Eric Justin</span>
         </a>
         <div class="flex gap-6 text-xs md:text-sm font-medium">
@@ -59,47 +38,92 @@
     <main class="max-w-screen-xl mx-auto px-4 md:px-8 py-10">
         <header class="mb-12 md:mb-20">
             <h1 class="text-3xl md:text-5xl font-bold tracking-tight text-gray-900">探索所有精緻小卡</h1>
-            <p class="text-gray-500 mt-3 text-lg md:text-xl">質感設計，為您的收藏增添獨特風格。</p>
+            <p class="text-gray-500 mt-3 text-lg md:text-xl">從雲端讀取最新的設計收藏。</p>
         </header>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-10">
-            
-            <a href="buy.html" class="product-card group">
-                <div class="img-container mb-4">
-                    <img src="photo/仍然.png" alt="經典磨砂小卡">
-                </div>
-                <div class="px-1">
-                    <span class="text-orange-600 text-[10px] md:text-xs font-bold uppercase tracking-widest">新品</span>
-                    <h3 class="text-base md:text-xl font-bold text-gray-900 leading-tight mt-1">經典磨砂小卡</h3>
-                    <p class="text-gray-500 text-xs mt-1 line-clamp-1">頂級質感紙張</p>
-                    <p class="text-sm md:text-lg font-semibold mt-2 text-black">NT$ 10 起</p>
-                </div>
-            </a>
-
-            <a href="buy.html" class="product-card group opacity-50">
-                <div class="img-container mb-4">
-                    <img src="photo/S__38223874.jpg" alt="開發中">
-                </div>
-                <div class="px-1">
-                    <span class="text-blue-600 text-[10px] md:text-xs font-bold uppercase tracking-widest">期待</span>
-                    <h3 class="text-base md:text-xl font-bold text-gray-900 leading-tight mt-1">即將登場</h3>
-                    <p class="text-gray-500 text-xs mt-1 line-clamp-1">Coming Soon</p>
-                    <p class="text-sm md:text-lg font-semibold mt-2 text-black">敬請期待</p>
-                </div>
-            </a>
-
-            </div>
+        <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-10">
+            <p class="col-span-full text-center py-20 text-gray-400 animate-pulse">正在連接雲端資料庫...</p>
+        </div>
     </main>
 
     <footer class="bg-[#f5f5f7] py-16 mt-20 text-center px-6">
-        <div class="max-w-screen-xl mx-auto">
-            <p class="text-gray-400 text-xs md:text-sm">© 2026 Eric Justin. 保留所有權利。</p>
-            <div class="mt-4 flex justify-center gap-6 text-[10px] text-gray-400">
-                <a href="#" class="hover:underline">隱私權政策</a>
-                <a href="#" class="hover:underline">銷售條款</a>
-            </div>
-        </div>
+        <p class="text-gray-400 text-xs md:text-sm">© 2026 Eric Justin. 保留所有權利。</p>
     </footer>
 
+    <script>
+        const SUPABASE_URL = 'https://oikubhlwdbxrfhifqusn.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function loadProducts() {
+            const grid = document.getElementById('product-grid');
+            
+            try {
+                const { data: products, error } = await _supabase
+                    .from('products')
+                    .select('*');
+
+                if (error) throw error;
+
+                if (!products || products.length === 0) {
+                    grid.innerHTML = `<p class="col-span-full text-center py-20 text-gray-400">目前倉庫空空如也...</p>`;
+                    return;
+                }
+
+                // 自動排序邏輯：將 status (Boolean) 為 true 的排在前面
+                products.sort((a, b) => {
+                    const valA = a.status === true ? 1 : 0;
+                    const valB = b.status === true ? 1 : 0;
+                    return valB - valA; 
+                });
+
+                grid.innerHTML = '';
+
+                products.forEach(product => {
+                    // 只要 status 不是 true (即為 false 或 null)，就變灰色
+                    const isInactive = product.status !== true;
+                    const cardStateClass = isInactive ? 'is-disabled' : 'active-card group';
+                    
+                    let tagText = product.tag || '精選';
+                    let tagColor = 'text-orange-600';
+
+                    if (isInactive) {
+                        tagText = '暫時缺貨';
+                        tagColor = 'text-gray-400';
+                    }
+
+                    grid.innerHTML += `
+                        <div class="product-card ${cardStateClass}">
+                            <a href="${isInactive ? '#' : 'buy.html?id=' + product.id}">
+                                <div class="img-container mb-4">
+                                    <img src="${product.image_url}" alt="${product.name}">
+                                </div>
+                                <div class="px-1">
+                                    <span class="${tagColor} text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                                        ${tagText}
+                                    </span>
+                                    <h3 class="text-base md:text-xl font-bold text-gray-900 leading-tight mt-1">${product.name}</h3>
+                                    
+                                    <p class="text-gray-500 text-xs mt-1 line-clamp-1">
+                                        ${product.description || '點擊查看詳情'}
+                                    </p>
+                                    
+                                    <p class="text-sm md:text-lg font-semibold mt-2 text-black">
+                                        ${isInactive ? '暫未發售' : 'NT$ ' + product.price + ' 起'}
+                                    </p>
+                                </div>
+                            </a>
+                        </div>
+                    `;
+                });
+
+            } catch (err) {
+                console.error("連線出錯:", err);
+                grid.innerHTML = `<p class="col-span-full text-red-500 text-center py-20">連線失敗<br><span class="text-xs text-gray-400">${err.message}</span></p>`;
+            }
+        }
+
+        loadProducts();
+    </script>
 </body>
 </html>

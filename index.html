@@ -8,10 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <style>
-        :root { --nav-h: 52px; } /* 稍微調高一點以適應圓形 Logo */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding-top: var(--nav-h); overflow-x: hidden; }
+        :root { --nav-h: 52px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding-top: var(--nav-h); overflow-x: hidden; background: #000; }
         
-        /* 導覽列 */
         .glass-nav { 
             background: rgba(0, 0, 0, 0.8); 
             backdrop-filter: blur(20px); 
@@ -20,21 +19,15 @@
             border-bottom: 0.5px solid rgba(255,255,255,0.1); 
         }
 
-        /* 文字漸層 */
         .text-gradient { 
             background: linear-gradient(180deg, #fff 0%, #86868b 100%); 
             -webkit-background-clip: text; 
             -webkit-text-fill-color: transparent; 
         }
 
-        /* 背景系統 */
         .theme-dark { background: #000; color: #fff; }
         .theme-light { background: #f5f5f7; color: #1d1d1f; }
-
-        /* 動態預備類別 (由 GSAP 控制) */
         .reveal { opacity: 0; transform: translateY(40px); }
-
-        /* 圖片圓角增強 */
         .rounded-apple { border-radius: 32px; }
     </style>
 </head>
@@ -47,9 +40,8 @@
                      class="w-7 h-7 rounded-full object-cover ring-1 ring-white/20 group-hover:ring-white/50 transition">
                 <span class="ml-2.5 text-sm font-semibold tracking-tight text-white">Eric Justin</span>
             </a>
-            <div class="flex gap-8 text-[12px] text-white/80 font-medium">
+            <div class="flex items-center gap-6 md:gap-8 text-[12px] text-white/80 font-medium">
                 <a href="catalog.html" class="hover:text-white transition">選購</a>
-                <a href="#" class="hover:text-white transition">支援</a>
                 <a href="catalog.html" class="opacity-60 hover:opacity-100 transition">🛒</a>
             </div>
         </div>
@@ -76,7 +68,6 @@
             <div class="text-center mb-16 reveal">
                 <h2 class="text-4xl md:text-6xl font-bold tracking-tight">其他品項。</h2>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="reveal bg-white rounded-apple p-10 md:p-16 flex flex-col justify-between h-[550px] shadow-sm border border-gray-100 group">
                     <div class="space-y-4">
@@ -85,14 +76,12 @@
                         <p class="text-gray-500 text-lg leading-relaxed">歷來最萌。可愛到起飛!</p>
                     </div>
                     <div class="flex-grow flex items-center justify-center overflow-hidden">
-                        <img src="photo/仍然.png" 
-                             class="max-h-[260px] object-contain group-hover:scale-110 transition duration-700">
+                        <img src="photo/仍然.png" class="max-h-[260px] object-contain group-hover:scale-110 transition duration-700">
                     </div>
                     <div class="pt-6 border-t border-gray-50">
                         <a href="catalog.html" class="text-blue-600 font-semibold hover:underline">立刻選購 ></a>
                     </div>
                 </div>
-
                 <div class="reveal bg-white rounded-apple p-10 md:p-16 flex flex-col justify-between h-[550px] shadow-sm border border-gray-100 group">
                     <div class="space-y-4">
                         <span class="text-blue-600 font-bold text-xs uppercase tracking-widest">全新仍然</span>
@@ -100,8 +89,7 @@
                         <p class="text-gray-500 text-lg leading-relaxed">捕捉每個Airpods pro。</p>
                     </div>
                     <div class="flex-grow flex items-center justify-center overflow-hidden">
-                        <img src="photo/S__38223874.jpg" 
-                             class="max-h-[260px] object-contain group-hover:scale-110 transition duration-700">
+                        <img src="photo/S__38223874.jpg" class="max-h-[260px] object-contain group-hover:scale-110 transition duration-700">
                     </div>
                     <div class="pt-6 border-t border-gray-50">
                         <a href="catalog.html" class="text-blue-600 font-semibold hover:underline">立刻選購 ></a>
@@ -121,25 +109,15 @@
     </section>
 
     <footer class="theme-dark border-t border-white/10 py-20 px-6 text-center">
-        <div class="max-w-screen-xl mx-auto space-y-8">
-            <div class="flex justify-center gap-10 text-gray-500 text-xs">
-                <a href="#" class="hover:text-white transition">隱私權政策</a>
-                <a href="#" class="hover:text-white transition">法律資訊</a>
-                <a href="index.html" class="hover:text-white transition">網站地圖</a>
-            </div>
-            <p class="text-gray-600 text-[10px]">
-                Copyright © 2026 Eric Justin. 保留所有權利。
-            </p>
-        </div>
+        <p class="text-gray-600 text-[10px]">Copyright © 2026 Eric Justin. 保留所有權利。</p>
     </footer>
 
     <script>
         gsap.registerPlugin(ScrollTrigger);
 
         window.addEventListener('DOMContentLoaded', () => {
-            const elements = gsap.utils.toArray(".reveal");
-            
-            elements.forEach(el => {
+            // 頁面元素浮現動畫
+            gsap.utils.toArray(".reveal").forEach(el => {
                 gsap.to(el, {
                     opacity: 1,
                     y: 0,
@@ -148,19 +126,18 @@
                     scrollTrigger: {
                         trigger: el,
                         start: "top 90%",
-                        toggleActions: "play none none reverse"
                     }
                 });
             });
 
+            // 導覽列背景變深效果
             ScrollTrigger.create({
                 start: "top top",
                 onUpdate: (self) => {
-                    if (self.scroll() > 50) {
-                        gsap.to(".glass-nav", { backgroundColor: "rgba(0,0,0,0.9)", duration: 0.3 });
-                    } else {
-                        gsap.to(".glass-nav", { backgroundColor: "rgba(0,0,0,0.8)", duration: 0.3 });
-                    }
+                    gsap.to(".glass-nav", { 
+                        backgroundColor: self.scroll() > 50 ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.8)", 
+                        duration: 0.3 
+                    });
                 }
             });
         });

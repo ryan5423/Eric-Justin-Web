@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>產品詳情 | Eric Justin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: -apple-system, sans-serif; background: #fff; color: #1d1d1f; padding-top: 60px; }
         .nav-buy { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-bottom: 0.5px solid #d2d2d7; }
         
-        /* 圖片滾動樣式 */
-        .slider-wrapper { position: relative; width: 100%; }
+        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 24px; background: #f5f5f7; }
         .slider-container {
             display: flex;
             overflow-x: auto;
@@ -19,135 +19,196 @@
             -webkit-overflow-scrolling: touch;
         }
         .slider-container::-webkit-scrollbar { display: none; }
-        .slide { flex: 0 0 100%; scroll-snap-align: start; display: flex; justify-content: center; padding: 0 10px; }
-
-        .product-img {
-            width: 100%;
-            max-height: 45vh;
-            object-fit: contain;
-            border-radius: 32px;
+        
+        /* 增加 slide 的高度確保長型圖片有足夠顯示空間 */
+        .slide { 
+            flex: 0 0 100%; 
+            scroll-snap-align: start; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 45vh; 
             background: #f5f5f7;
         }
 
+        .product-img {
+            width: 100%;
+            height: auto;
+            max-height: 55vh;
+            /* 關鍵修正：改為 contain 確保不裁切 */
+            object-fit: contain; 
+            background: #f5f5f7;
+            display: block;
+        }
+
         @media (min-width: 768px) {
-            .image-box { position: sticky; top: 100px; height: 80vh; }
-            .product-img { max-height: 65vh; }
+            .image-box { position: sticky; top: 100px; height: fit-content; }
+            .product-img { max-height: 70vh; }
         }
 
         .nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
-            width: 40px; height: 40px; background: rgba(210, 210, 217, 0.5);
+            width: 44px; height: 44px; background: rgba(255, 255, 255, 0.9);
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 20; border: none;
+            cursor: pointer; z-index: 40; border: 1px solid #d2d2d7;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: 0.2s;
         }
-        .nav-btn:hover { background: rgba(180, 180, 187, 0.8); }
-        .nav-btn.prev { left: 10px; }
-        .nav-btn.next { right: 10px; }
+        .nav-btn:hover { background: white; scale: 1.05; }
+        .nav-btn.prev { left: 16px; }
+        .nav-btn.next { right: 16px; }
 
-        /* 介紹卡片樣式 */
         .info-card { border: 1px solid #d2d2d7; border-radius: 16px; padding: 24px; background: #fafafa; }
-        
         .dot-indicator { width: 8px; height: 8px; background: #d2d2d7; border-radius: 50%; margin: 0 4px; transition: 0.3s; }
-        .dot-indicator.active { background: #86868b; width: 20px; border-radius: 4px; }
+        .dot-indicator.active { background: #1d1d1f; width: 20px; border-radius: 4px; }
+        
+        .btn-disabled { background-color: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed !important; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <nav class="nav-buy fixed top-0 w-full z-50 px-6 py-3 flex justify-between items-center h-[52px]">
         <a href="index.html" class="flex items-center group">
-            <img src="photo/S__38223874.jpg" alt="Eric Justin" 
-                 class="w-7 h-7 rounded-full object-cover ring-1 ring-black/5 group-hover:ring-black/20 transition">
-            <span class="ml-2.5 text-sm font-semibold tracking-tight text-black">Eric Justin</span>
+            <span class="text-sm font-semibold tracking-tight text-black">Eric Justin</span>
         </a>
-        <a href="index.html" class="text-sm text-blue-600 hover:underline font-medium">返回首頁</a>
+        <a href="catalog.html" class="text-sm text-blue-600 hover:underline font-medium">返回全部商品</a>
     </nav>
 
-    <main class="max-w-screen-xl mx-auto px-6 md:grid md:grid-cols-2 md:gap-16">
-        <div class="image-box py-6">
+    <div id="loading" class="h-screen flex items-center justify-center text-gray-400 animate-pulse">正在探索作品細節...</div>
+
+    <main id="content" class="max-w-screen-xl mx-auto px-6 md:grid md:grid-cols-2 md:gap-16 py-10 hidden">
+        <div class="image-box">
             <div class="slider-wrapper group">
-                <button class="nav-btn prev" onclick="moveSlide(-1)">❮</button>
-                <button class="nav-btn next" onclick="moveSlide(1)">❯</button>
-                <div class="slider-container" id="slider">
-                    <div class="slide"><img class="product-img" src="photo/仍然.png"></div>
-                    <div class="slide"><img class="product-img" src="photo/Cormnt.png"></div>
-                    <div class="slide"><img class="product-img" src="photo/30分鐘.png"></div>
-                </div>
+                <button id="prev-btn" class="nav-btn prev" onclick="moveSlide(-1)">❮</button>
+                <button id="next-btn" class="nav-btn next" onclick="moveSlide(1)">❯</button>
+                <div class="slider-container" id="slider"></div>
             </div>
-            <div class="flex justify-center mt-6" id="dots-container">
-                <div class="dot-indicator active"></div>
-                <div class="dot-indicator"></div>
-                <div class="dot-indicator"></div>
-            </div>
+            <div class="flex justify-center mt-6" id="dots-container"></div>
         </div>
 
-        <div class="py-10 space-y-10 pb-32">
+        <div class="space-y-10 pb-32">
             <header>
-                <span class="text-orange-600 font-bold text-sm tracking-widest uppercase">匠心系列</span>
-                <h1 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight mt-2">精緻小卡</h1>
-                <p class="text-2xl text-gray-500 font-medium">NT$ 10 起</p>
-                <p class="text-gray-400 mt-6 leading-relaxed">我們堅持使用低品質紙材，結合細膩粗糙的印刷技術。這不只是一張小卡，更是您品味的延伸。</p>
+                <span id="p-tag" class="text-blue-600 font-bold text-xs tracking-widest uppercase"></span>
+                <h1 id="p-name" class="text-4xl md:text-5xl font-bold mb-4 tracking-tight mt-2 text-gray-900"></h1>
+                <p id="p-price" class="text-2xl text-gray-500 font-medium"></p>
+                <p id="p-desc" class="text-gray-400 mt-6 leading-relaxed text-lg font-light"></p>
             </header>
 
             <section>
-                <h3 class="font-bold mb-4 text-xs text-gray-400 uppercase tracking-widest">工藝細節</h3>
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="info-card">
-                        <p class="font-bold text-lg mb-1">磨砂霧面質感</p>
-                        <p class="text-sm text-gray-500">沒採用抗指紋處理，手感細潤，在不同光線下呈現內斂色澤。</p>
-                    </div>
-                    <div class="info-card">
-                        <p class="font-bold text-lg mb-1">圓角精細裁切</p>
-                        <p class="text-sm text-gray-500">每一張卡片都經過精確圓角處理，圓潤不被偷，完美放入皮夾。</p>
-                    </div>
-                </div>
-            </section>
-
-            <section>
-                <h3 class="font-bold mb-4 text-xs text-gray-400 uppercase tracking-widest">規格選擇</h3>
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center p-4 border-b border-gray-100">
-                        <span class="font-bold">正常尺寸</span>
-                        <span class="text-gray-500">8.5 x 5.4 cm (標準卡)</span>
-                    </div>
-                    <div class="flex justify-between items-center p-4 border-b border-gray-100">
-                        <span class="font-bold">迷你尺寸</span>
-                        <span class="text-gray-500">5.4 x 4.0 cm (精緻小巧)</span>
-                    </div>
+                <h3 class="font-bold mb-4 text-xs text-gray-400 uppercase tracking-widest border-b pb-2">工藝細節</h3>
+                <div class="info-card mt-4">
+                    <p id="p-detail-title" class="font-bold text-lg mb-1"></p>
+                    <p id="p-detail" class="text-sm text-gray-500 leading-7 font-light"></p>
                 </div>
             </section>
 
             <div class="hidden md:block pt-6">
-                <p class="text-xs text-gray-400 mb-4 text-center">點擊下方按鈕，將跳轉至 Google 表單完成訂購細節</p>
-                <a href="https://forms.gle/mQVA8hiq9G9uVFTf7" target="_blank" class="block w-full text-center bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-500 transition shadow-xl">
+                <a id="buy-btn-pc" href="#" target="_blank" class="block w-full text-center bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-500 transition shadow-lg">
                     立即填寫訂購表單
                 </a>
             </div>
         </div>
     </main>
 
-    <div class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t p-6 flex justify-between items-center z-50">
+    <div id="mobile-bar" class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t p-6 flex justify-between items-center z-50 hidden">
         <div>
             <p class="text-[10px] text-gray-400 uppercase font-bold">預計價格</p>
-            <p class="font-bold text-xl">NT$ 10 起</p>
+            <p id="p-price-mobile" class="font-bold text-xl"></p>
         </div>
-        <a href="https://forms.gle/mQVA8hiq9G9uVFTf7" target="_blank" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold active:scale-95 transition">
+        <a id="buy-btn-mobile" href="#" target="_blank" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold active:scale-95 transition">
             前往表單
         </a>
     </div>
 
     <script>
-        const slider = document.getElementById('slider');
-        const dots = document.querySelectorAll('.dot-indicator');
+        const SUPABASE_URL = 'https://oikubhlwdbxrfhifqusn.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function moveSlide(direction) {
-            const scrollAmount = slider.clientWidth;
-            slider.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        async function init() {
+            if (!productId) {
+                document.getElementById('loading').innerText = "找不到作品 ID，請返回目錄。";
+                return;
+            }
+
+            try {
+                const { data: p, error } = await _supabase.from('products').select('*').eq('id', productId).single();
+                if (error || !p) throw error;
+
+                document.getElementById('p-name').innerText = p.name;
+                document.getElementById('p-price').innerText = `NT$ ${p.price.toLocaleString()} 起`;
+                document.getElementById('p-price-mobile').innerText = `NT$ ${p.price.toLocaleString()} 起`;
+                document.getElementById('p-desc').innerText = p.description || '精心手工打造。';
+                document.getElementById('p-tag').innerText = p.tag || 'ERIC JUSTIN';
+                document.getElementById('p-detail-title').innerText = p.detail_title || '材質與工法';
+                document.getElementById('p-detail').innerText = p.detail || '每一件作品皆為獨一無二。';
+
+                const slider = document.getElementById('slider');
+                const dots = document.getElementById('dots-container');
+                slider.innerHTML = ''; 
+                dots.innerHTML = '';
+
+                const imgList = [p.image_url, p.image_url2, p.image_url3].filter(url => 
+                    url && url.trim() !== "" && url !== "null"
+                ); 
+                
+                if (imgList.length === 0) imgList.push('https://via.placeholder.com/800x800?text=Eric+Justin+Artwork');
+
+                imgList.forEach((url, i) => {
+                    const slideDiv = document.createElement('div');
+                    slideDiv.className = 'slide';
+                    slideDiv.innerHTML = `<img class="product-img" src="${url}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/800x800?text=圖片載入失敗'">`;
+                    slider.appendChild(slideDiv);
+
+                    const dot = document.createElement('div');
+                    dot.className = `dot-indicator ${i === 0 ? 'active' : ''}`;
+                    dots.appendChild(dot);
+                });
+
+                if(imgList.length <= 1) {
+                    document.getElementById('prev-btn').style.display = 'none';
+                    document.getElementById('next-btn').style.display = 'none';
+                    dots.style.display = 'none';
+                }
+
+                const buyBtnPc = document.getElementById('buy-btn-pc');
+                const buyBtnMobile = document.getElementById('buy-btn-mobile');
+                
+                if (p.status !== true) {
+                    [buyBtnPc, buyBtnMobile].forEach(btn => {
+                        btn.innerText = "暫時缺貨";
+                        btn.classList.add('btn-disabled');
+                    });
+                } else {
+                    const formUrl = "https://forms.gle/mQVA8hiq9G9uVFTf7";
+                    buyBtnPc.href = formUrl;
+                    buyBtnMobile.href = formUrl;
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').classList.remove('hidden');
+                document.getElementById('mobile-bar').classList.remove('hidden');
+
+            } catch (e) {
+                console.error("Init Error:", e);
+                document.getElementById('loading').innerText = "獲取資料出錯，請確認產品是否存在。";
+            }
         }
 
-        slider.addEventListener('scroll', () => {
-            const index = Math.round(slider.scrollLeft / slider.clientWidth);
-            dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+        function moveSlide(dir) {
+            const s = document.getElementById('slider');
+            s.scrollBy({ left: dir * s.clientWidth, behavior: 'smooth' });
+        }
+
+        document.getElementById('slider').addEventListener('scroll', () => {
+            const s = document.getElementById('slider');
+            const index = Math.round(s.scrollLeft / s.clientWidth);
+            document.querySelectorAll('.dot-indicator').forEach((dot, i) => dot.classList.toggle('active', i === index));
         });
+
+        init();
     </script>
 </body>
 </html>
