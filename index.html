@@ -3,32 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eric Justin | 官方首頁</title>
+    <title>EriJu | 官方首頁</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <style>
         :root { --nav-h: 52px; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding-top: var(--nav-h); overflow-x: hidden; background: #000; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif; margin: 0; padding-top: var(--nav-h); overflow-x: hidden; background: #000; }
         
+        /* Apple 風格導覽列 */
         .glass-nav { 
-            background: rgba(0, 0, 0, 0.8); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px); 
+            background: rgba(0, 0, 0, 0.75); 
+            backdrop-filter: saturate(180%) blur(20px); 
+            -webkit-backdrop-filter: saturate(180%) blur(20px); 
             z-index: 1000; 
             border-bottom: 0.5px solid rgba(255,255,255,0.1); 
         }
 
         .text-gradient { 
-            background: linear-gradient(180deg, #fff 0%, #86868b 100%); 
+            background: linear-gradient(180deg, #fff 30%, rgba(255,255,255,0.5) 100%); 
             -webkit-background-clip: text; 
             -webkit-text-fill-color: transparent; 
         }
 
         .theme-dark { background: #000; color: #fff; }
         .theme-light { background: #f5f5f7; color: #1d1d1f; }
-        .reveal { opacity: 0; transform: translateY(40px); }
-        .rounded-apple { border-radius: 32px; }
+        .reveal { opacity: 0; transform: translateY(30px); }
+        .rounded-apple { border-radius: 28px; }
+
+        /* 使用者選單 (Dropdown) */
+        .user-menu {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            position: absolute;
+            right: -10px;
+            top: 40px;
+            width: 180px;
+            background: rgba(28, 28, 30, 0.98);
+            backdrop-filter: blur(20px);
+            border: 0.5px solid rgba(255,255,255,0.15);
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1001;
+        }
+        /* 當滑鼠移入 auth-section 時顯示選單 */
+        #auth-section:hover .user-menu { opacity: 1; visibility: visible; transform: translateY(0); }
     </style>
 </head>
 <body>
@@ -37,107 +59,180 @@
         <div class="max-w-screen-xl mx-auto h-full flex items-center justify-between px-6">
             <a href="index.html" class="flex items-center group">
                 <img src="photo/S__38223874.jpg" alt="Eric Justin" 
-                     class="w-7 h-7 rounded-full object-cover ring-1 ring-white/20 group-hover:ring-white/50 transition">
-                <span class="ml-2.5 text-sm font-semibold tracking-tight text-white">Eric Justin</span>
+                     class="w-7 h-7 rounded-full object-cover ring-1 ring-white/20 group-hover:ring-white/50 transition duration-500">
+                <span class="ml-2.5 text-sm font-semibold tracking-tight text-white/90">EriJu</span>
             </a>
-            <div class="flex items-center gap-6 md:gap-8 text-[12px] text-white/80 font-medium">
+            <div class="flex items-center gap-6 md:gap-9 text-[12px] text-white/70 font-medium">
                 <a href="catalog.html" class="hover:text-white transition">選購</a>
-                <a href="catalog.html" class="opacity-60 hover:opacity-100 transition">🛒</a>
+                
+                <div id="auth-section" class="relative h-full flex items-center">
+                    <button id="login-btn" onclick="loginWithGoogle()" class="hover:text-white transition">登入</button>
+                    </div>
+
+                <a href="cart.html" class="opacity-70 hover:opacity-100 transition text-[14px] relative">
+                    🛒
+                    <span id="cart-dot" class="hidden absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </a>
             </div>
         </div>
     </nav>
 
-    <section class="theme-dark min-h-[90vh] flex flex-col items-center justify-center text-center px-6 py-20">
+    <section class="theme-dark min-h-[92vh] flex flex-col items-center justify-center text-center px-6">
         <div class="reveal">
-            <h1 class="text-gradient text-5xl md:text-8xl font-bold mb-4">30分鐘</h1>
-            <h2 class="text-xl md:text-3xl font-semibold mb-8 text-white">2026。大螢幕上見。</h2>
-            <div class="flex flex-wrap gap-4 justify-center items-center">
-                <a href="catalog.html" class="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-500 transition shadow-lg shadow-blue-900/20">立即購買</a>
-                <a href="#features" class="text-blue-500 text-lg hover:underline ml-4">了解更多 ></a>
+            <h1 class="text-gradient text-6xl md:text-[100px] font-bold tracking-tighter mb-4">30分鐘</h1>
+            <h2 class="text-xl md:text-3xl font-medium mb-10 text-white/80">2026。大螢幕上見。</h2>
+            <div class="flex flex-col md:flex-row gap-5 justify-center items-center">
+                <a href="catalog.html" class="bg-[#0071e3] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#0077ed] transition-all transform hover:scale-105">立即購買</a>
+                <a href="#features" class="text-[#2997ff] text-lg hover:underline decoration-1 underline-offset-4">了解更多 ></a>
             </div>
         </div>
         
-        <div class="mt-16 w-full max-w-4xl reveal px-4">
+        <div class="mt-20 w-full max-w-5xl reveal px-4">
             <img src="photo/30分鐘.png" 
-                 class="w-full h-auto rounded-apple shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform hover:scale-[1.01] transition duration-700">
+                 class="w-full h-auto rounded-apple shadow-[0_40px_100px_rgba(0,0,0,0.6)] transform transition duration-1000 hover:scale-[1.02]">
         </div>
     </section>
 
-    <section id="features" class="theme-light py-24 md:py-40">
+    <section id="features" class="theme-light py-32 md:py-48">
         <div class="max-w-screen-xl mx-auto px-6">
-            <div class="text-center mb-16 reveal">
-                <h2 class="text-4xl md:text-6xl font-bold tracking-tight">其他品項。</h2>
+            <div class="mb-20 reveal">
+                <h2 class="text-5xl md:text-7xl font-bold tracking-tight">其他品項。</h2>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="reveal bg-white rounded-apple p-10 md:p-16 flex flex-col justify-between h-[550px] shadow-sm border border-gray-100 group">
-                    <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="reveal bg-white rounded-apple p-12 flex flex-col justify-between h-[600px] shadow-sm border border-gray-100 overflow-hidden relative group text-left">
+                    <div class="z-10">
                         <span class="text-orange-600 font-bold text-xs uppercase tracking-widest">不要放屁</span>
-                        <h3 class="text-3xl md:text-4xl font-bold">可愛小卡</h3>
-                        <p class="text-gray-500 text-lg leading-relaxed">歷來最萌。可愛到起飛!</p>
+                        <h3 class="text-4xl font-bold mt-2">可愛小卡</h3>
+                        <p class="text-gray-500 text-xl mt-4">歷來最萌。可愛到起飛!</p>
                     </div>
-                    <div class="flex-grow flex items-center justify-center overflow-hidden">
-                        <img src="photo/仍然.png" class="max-h-[260px] object-contain group-hover:scale-110 transition duration-700">
-                    </div>
-                    <div class="pt-6 border-t border-gray-50">
-                        <a href="catalog.html" class="text-blue-600 font-semibold hover:underline">立刻選購 ></a>
+                    <img src="photo/仍然.png" class="absolute bottom-20 left-1/2 -translate-x-1/2 max-h-[300px] object-contain group-hover:scale-110 transition duration-1000 ease-out">
+                    <div class="z-10">
+                        <a href="catalog.html" class="text-[#0066cc] font-semibold text-lg hover:underline">立刻選購 ></a>
                     </div>
                 </div>
-                <div class="reveal bg-white rounded-apple p-10 md:p-16 flex flex-col justify-between h-[550px] shadow-sm border border-gray-100 group">
-                    <div class="space-y-4">
+                <div class="reveal bg-white rounded-apple p-12 flex flex-col justify-between h-[600px] shadow-sm border border-gray-100 overflow-hidden relative group text-left">
+                    <div class="z-10">
                         <span class="text-blue-600 font-bold text-xs uppercase tracking-widest">全新仍然</span>
-                        <h3 class="text-3xl md:text-4xl font-bold">專業偷取</h3>
-                        <p class="text-gray-500 text-lg leading-relaxed">捕捉每個Airpods pro。</p>
+                        <h3 class="text-4xl font-bold mt-2">專業偷取</h3>
+                        <p class="text-gray-500 text-xl mt-4">捕捉每個 Airpods Pro。</p>
                     </div>
-                    <div class="flex-grow flex items-center justify-center overflow-hidden">
-                        <img src="photo/S__38223874.jpg" class="max-h-[260px] object-contain group-hover:scale-110 transition duration-700">
-                    </div>
-                    <div class="pt-6 border-t border-gray-50">
-                        <a href="catalog.html" class="text-blue-600 font-semibold hover:underline">立刻選購 ></a>
+                    <img src="photo/S__38223874.jpg" class="absolute bottom-20 left-1/2 -translate-x-1/2 max-h-[300px] object-contain group-hover:scale-110 transition duration-1000 ease-out">
+                    <div class="z-10">
+                        <a href="catalog.html" class="text-[#0066cc] font-semibold text-lg hover:underline">立刻選購 ></a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="theme-dark py-40 text-center px-6">
+    <section class="theme-dark py-48 text-center px-6">
         <div class="max-w-4xl mx-auto reveal">
-            <h2 class="text-4xl md:text-7xl font-bold leading-tight mb-8">
-                "這不僅是一個屁，<br>更是對未來的重新定義。"
+            <h2 class="text-4xl md:text-7xl font-bold leading-tight mb-10 tracking-tight">
+                "這不僅是一個屁，<br><span class="text-white/40">更是對未來的重新定義。"</span>
             </h2>
-            <p class="text-gray-400 text-lg">預計 2026 年春季正式登場</p>
+            <p class="text-gray-500 text-xl font-medium tracking-wide">預計 2026 年春季正式登場</p>
         </div>
     </section>
 
-    <footer class="theme-dark border-t border-white/10 py-20 px-6 text-center">
-        <p class="text-gray-600 text-[10px]">Copyright © 2026 Eric Justin. 保留所有權利。</p>
+    <footer class="theme-dark border-t border-white/5 py-24 px-6 text-center">
+        <p class="text-gray-600 text-[11px] tracking-widest uppercase">Copyright © 2026 Eric Justin. 保留所有權利。</p>
     </footer>
 
     <script>
-        gsap.registerPlugin(ScrollTrigger);
+        // --- 1. Supabase 初始化 ---
+        const SUPABASE_URL = 'https://oikubhlwdbxrfhifqusn.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // --- 2. 持久化登入功能 ---
+        async function loginWithGoogle() {
+            const btn = document.getElementById('login-btn');
+            btn.innerText = "正在連接...";
+            try {
+                const { error } = await _supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { 
+                        // redirectTo: window.location.origin + window.location.pathname,
+                        persistSession: true // 強制持久化儲存 Session
+                    }
+                });
+                if (error) throw error;
+            } catch (err) {
+                console.error("Login Error:", err.message);
+                btn.innerText = "登入失敗";
+                setTimeout(() => btn.innerText = "登入", 2000);
+            }
+        }
+
+        async function logout() {
+            await _supabase.auth.signOut();
+            location.reload(); // 登出後刷新頁面回歸初始狀態
+        }
+
+        // --- 3. UI 狀態監聽 (核心：保持頭像與選單) ---
+        function handleAuthUI() {
+            const authSection = document.getElementById('auth-section');
+            
+            _supabase.auth.onAuthStateChange((event, session) => {
+                console.log("Auth Event:", event); // 除錯觀察用
+
+                if (session && session.user) {
+                    const user = session.user;
+                    const avatar = user.user_metadata.avatar_url || 'photo/S__38223874.jpg';
+                    
+                    authSection.innerHTML = `
+                        <div class="flex items-center cursor-pointer py-2">
+                            <img src="${avatar}" class="w-7 h-7 rounded-full border border-white/20 hover:border-white/50 transition">
+                            <div class="user-menu">
+                                <div class="px-5 py-4 border-b border-white/10 text-left">
+                                    <p class="text-white text-[12px] font-semibold truncate">${user.user_metadata.full_name || '使用者'}</p>
+                                    <p class="text-gray-500 text-[10px] truncate mt-1">${user.email}</p>
+                                </div>
+                                <div class="py-1 text-left">
+                                    <a href="orders.html" class="block px-5 py-3 text-white/80 text-[11px] hover:bg-white/10 transition">我的訂單紀錄</a>
+                                    <button onclick="logout()" class="w-full text-left px-5 py-3 text-red-400 text-[11px] hover:bg-white/10 transition font-medium">
+                                        登出帳號
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // 若未登入，還原登入按鈕
+                    authSection.innerHTML = `<button id="login-btn" onclick="loginWithGoogle()" class="hover:text-white transition">登入</button>`;
+                }
+            });
+        }
+
+        // --- 4. 購物車紅點與 GSAP 動畫 ---
+        function checkCartDot() {
+            const cart = JSON.parse(localStorage.getItem('ej_cart') || '[]');
+            const dot = document.getElementById('cart-dot');
+            if (dot && cart.length > 0) {
+                dot.classList.remove('hidden');
+                gsap.to(dot, { scale: 1.3, duration: 0.8, repeat: -1, yoyo: true });
+            }
+        }
+
+        gsap.registerPlugin(ScrollTrigger);
         window.addEventListener('DOMContentLoaded', () => {
-            // 頁面元素浮現動畫
+            handleAuthUI();
+            checkCartDot();
+
+            // 元素浮現動畫
             gsap.utils.toArray(".reveal").forEach(el => {
                 gsap.to(el, {
-                    opacity: 1,
-                    y: 0,
-                    duration: 1.5,
-                    ease: "power4.out",
-                    scrollTrigger: {
-                        trigger: el,
-                        start: "top 90%",
-                    }
+                    opacity: 1, y: 0, duration: 1.2, ease: "expo.out",
+                    scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none none" }
                 });
             });
 
-            // 導覽列背景變深效果
+            // 導覽列捲動變色
             ScrollTrigger.create({
                 start: "top top",
                 onUpdate: (self) => {
-                    gsap.to(".glass-nav", { 
-                        backgroundColor: self.scroll() > 50 ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.8)", 
-                        duration: 0.3 
-                    });
+                    const opacity = Math.min(0.75 + self.scroll() / 400, 0.95);
+                    gsap.to(".glass-nav", { backgroundColor: `rgba(0, 0, 0, ${opacity})`, duration: 0.2 });
                 }
             });
         });

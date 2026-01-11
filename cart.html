@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>購物車 | EriJu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f5f5f7; color: #1d1d1f; }
+        .glass-nav { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); border-bottom: 0.5px solid #d2d2d7; }
+        .cart-item { background: #fff; border-radius: 18px; }
+        .rounded-apple { border-radius: 20px; }
+        .img-container { width: 80px; height: 80px; background: #f9f9fb; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
+        .input-apple { width: 100%; padding: 14px; background: #fff; border: 1px solid #d2d2d7; border-radius: 12px; font-size: 15px; outline-color: #0071e3; }
+        .input-apple:focus { border-color: #0071e3; background: #fff; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <nav class="glass-nav fixed top-0 w-full z-50 h-[52px] flex items-center px-6">
+        <div class="max-w-screen-xl mx-auto w-full flex justify-between items-center">
+            <a href="index.html" class="font-bold text-sm tracking-tight text-black">EriJu</a>
+            <a href="catalog.html" class="text-xs text-blue-600 hover:underline">繼續選購</a>
+        </div>
+    </nav>
+
+    <main class="max-w-3xl mx-auto pt-24 px-6">
+        <h1 class="text-3xl md:text-4xl font-bold mb-8 tracking-tight">回顧您的購物袋。</h1>
+
+        <div id="login-alert" class="hidden mb-8 p-4 bg-blue-50 border border-blue-100 rounded-apple flex justify-between items-center">
+            <p class="text-sm text-blue-800">登入後即可快速完成結帳</p>
+            <button onclick="location.href='index.html'" class="text-sm font-bold text-blue-600">去登入 ></button>
+        </div>
+
+        <div id="cart-list" class="space-y-4">
+            <div class="py-20 text-center text-gray-400">正在檢查您的選購項目...</div>
+        </div>
+
+        <div id="shipping-section" class="mt-12 space-y-6 hidden">
+            <h2 class="text-2xl font-bold tracking-tight">寄送詳情。</h2>
+            <div class="bg-white p-6 rounded-apple shadow-sm space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-2 uppercase ml-1">收件人姓名</label>
+                    <input type="text" id="cust-name" placeholder="請輸入收件人真實姓名" class="input-apple">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-2 uppercase ml-1">聯絡電話</label>
+                    <input type="tel" id="cust-phone" placeholder="例如：0912345678" class="input-apple">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-2 uppercase ml-1">完整收件地址</label>
+                    <textarea id="cust-address" rows="3" placeholder="請輸入包含郵遞區號的完整地址" class="input-apple"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div id="checkout-section" class="mt-12 space-y-4 hidden">
+            <div class="flex justify-between text-gray-500 text-sm">
+                <span>小計</span>
+                <span id="subtotal">NT$ 0</span>
+            </div>
+            <div class="flex justify-between text-gray-500 text-sm">
+                <span>運費</span>
+                <span class="text-black">免運費</span>
+            </div>
+            <hr class="border-gray-200 my-4">
+            <div class="flex justify-between text-2xl font-bold">
+                <span>總計</span>
+                <span id="grand-total" class="text-blue-600">NT$ 0</span>
+            </div>
+
+            <button onclick="processOrder()" id="checkout-btn" class="w-full bg-blue-600 text-white py-4 rounded-apple font-bold text-lg mt-8 hover:bg-blue-700 transition shadow-xl shadow-blue-500/20">
+                確認結帳
+            </button>
+        </div>
+
+        <div id="empty-cart" class="hidden py-32 text-center">
+            <div class="text-6xl mb-6">🛒</div>
+            <p class="text-gray-400 text-lg mb-8">您的購物袋是空的。</p>
+            <a href="catalog.html" class="inline-block bg-blue-600 text-white px-10 py-3 rounded-full font-bold shadow-lg hover:bg-blue-700 transition">去選購作品</a>
+        </div>
+    </main>
+
+    <script>
+        const _supabase = supabase.createClient('https://oikubhlwdbxrfhifqusn.supabase.co', 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy');
+        
+        // Discord Webhook 網址
+        const DISCORD_WEBHOOK_URL = 'https://discordapp.com/api/webhooks/1459853932724617402/U28uPKZSEqe37V14Z7dPNZ-RDaeSRhL_9113skzOKJ9F1bUDiVvQ2LxGgfx7p0XM6p1h';
+
+        let myCart = [];
+
+        async function initCart() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                document.getElementById('login-alert').classList.remove('hidden');
+            } else {
+                document.getElementById('cust-name').value = session.user.user_metadata.full_name || '';
+            }
+
+            const savedCart = localStorage.getItem('ej_cart');
+            if (savedCart && JSON.parse(savedCart).length > 0) {
+                myCart = JSON.parse(savedCart);
+                renderCart();
+            } else {
+                showEmpty();
+            }
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cart-list');
+            list.innerHTML = '';
+            let total = 0;
+
+            myCart.forEach((item, index) => {
+                total += item.price * item.qty;
+                const imageUrl = item.image || 'photo/S__38223874.jpg';
+                list.innerHTML += `
+                    <div class="cart-item p-5 flex gap-5 items-center shadow-sm">
+                        <div class="img-container"><img src="${imageUrl}" class="w-full h-full object-cover"></div>
+                        <div class="flex-grow">
+                            <h3 class="font-bold text-base leading-tight">${item.name}</h3>
+                            <div class="flex items-center gap-4 mt-3">
+                                <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 font-bold">數量: ${item.qty}</span>
+                                <button onclick="removeItem(${index})" class="text-xs text-red-500 font-medium">移除項目</button>
+                            </div>
+                        </div>
+                        <div class="text-right"><p class="font-bold text-gray-900">NT$ ${(item.price * item.qty).toLocaleString()}</p></div>
+                    </div>`;
+            });
+
+            document.getElementById('subtotal').innerText = `NT$ ${total.toLocaleString()}`;
+            document.getElementById('grand-total').innerText = `NT$ ${total.toLocaleString()}`;
+            document.getElementById('checkout-section').classList.remove('hidden');
+            document.getElementById('shipping-section').classList.remove('hidden');
+            document.getElementById('empty-cart').classList.add('hidden');
+        }
+
+        function removeItem(index) {
+            if(confirm('確定要移除此商品嗎？')) {
+                myCart.splice(index, 1);
+                localStorage.setItem('ej_cart', JSON.stringify(myCart));
+                renderCart();
+                if(myCart.length === 0) showEmpty();
+            }
+        }
+
+        function showEmpty() {
+            document.getElementById('cart-list').innerHTML = '';
+            document.getElementById('checkout-section').classList.add('hidden');
+            document.getElementById('shipping-section').classList.add('hidden');
+            document.getElementById('empty-cart').classList.remove('hidden');
+        }
+
+        async function processOrder() {
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+            const address = document.getElementById('cust-address').value;
+
+            if (!name || !phone || !address) {
+                alert("請填寫完整的收件詳情。");
+                return;
+            }
+
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { alert("請先登入。"); return; }
+
+            const btn = document.getElementById('checkout-btn');
+            btn.disabled = true;
+            btn.innerText = "正在提交訂單...";
+
+            const total = myCart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const orderData = {
+                user_email: session.user.email,
+                user_name: name,
+                user_phone: phone,
+                shipping_address: address,
+                items: myCart,
+                total_amount: total,
+                status: 'pending'
+            };
+
+            const { error } = await _supabase.from('orders').insert([orderData]);
+
+            if (error) {
+                alert("下單失敗：" + error.message);
+                btn.disabled = false;
+                btn.innerText = "確認結帳";
+            } else {
+                // 發送 Discord 通知
+                await sendDiscordNotification(orderData);
+                
+                localStorage.removeItem('ej_cart');
+                alert("🎉 訂單已提交！職人已收到通知並將儘速處理。");
+                location.href = "orders.html";
+            }
+        }
+
+        // --- 2026 Discord Webhook 通知邏輯 ---
+        async function sendDiscordNotification(order) {
+            const payload = {
+                username: "EJ 訂單機器人",
+                embeds: [{
+                    title: "🆕 收到新訂單！",
+                    color: 3447003, // 經典藍色
+                    fields: [
+                        { name: "👤 客戶", value: order.user_name, inline: true },
+                        { name: "📞 電話", value: order.user_phone, inline: true },
+                        { name: "💰 總額", value: `NT$ ${order.total_amount.toLocaleString()}`, inline: false },
+                        { name: "📍 地址", value: order.shipping_address, inline: false },
+                        { name: "📦 內容", value: order.items.map(i => `${i.name} x${i.qty}`).join('\n'), inline: false }
+                    ],
+                    footer: { text: `來自 Eric Justin Studio • ${new Date().toLocaleString()}` }
+                }]
+            };
+
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (e) {
+                console.error("Discord 通知發送失敗", e);
+            }
+        }
+
+        initCart();
+    </script>
+</body>
+</html>

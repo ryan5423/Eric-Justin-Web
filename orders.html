@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訂單紀錄 | EriJu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; background: #f5f5f7; color: #1d1d1f; -webkit-font-smoothing: antialiased; }
+        
+        .glass-nav { 
+            background: rgba(255,255,255,0.7); 
+            backdrop-filter: saturate(180%) blur(20px); 
+            -webkit-backdrop-filter: saturate(180%) blur(20px); 
+            border-bottom: 0.5px solid rgba(0,0,0,0.1); 
+            z-index: 1000;
+        }
+
+        .tab-btn { position: relative; padding: 12px 4px; font-size: 15px; font-weight: 600; color: #86868b; transition: 0.3s; }
+        .tab-btn.active { color: #0071e3; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: #0071e3; border-radius: 2px; }
+
+        .order-card {
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+        .order-card.active { border-color: #0071e3; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+
+        .detail-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            opacity: 0;
+        }
+        .order-card.active .detail-wrapper { grid-template-rows: 1fr; opacity: 1; }
+        .detail-content { overflow: hidden; }
+
+        .badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px; }
+        .badge-pending { background: #f2f2f7; color: #8e8e93; }
+        .badge-processing { background: #e5f1ff; color: #0071e3; }
+        .badge-delivered { background: #eafaf1; color: #34c759; }
+        .badge-completed { background: #f2f2f7; color: #1d1d1f; opacity: 0.6; }
+
+        .apple-btn {
+            background: #0071e3;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,113,227,0.3);
+            transition: 0.2s;
+            width: 100%;
+        }
+        .apple-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+        .finishing { transform: scale(0.95); opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <nav class="glass-nav fixed top-0 w-full h-[52px] flex items-center px-6">
+        <div class="max-w-screen-xl mx-auto w-full flex justify-between items-center">
+            <a href="index.html" class="font-bold text-sm tracking-tight hover:opacity-70 transition">EriJu</a>
+            <div class="flex items-center gap-4">
+                <span id="user-email-display" class="text-[11px] text-gray-400 hidden md:block">...</span>
+                <a href="catalog.html" class="text-xs text-blue-600 font-semibold">繼續選購</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto pt-24 px-6">
+        <header class="mb-8">
+            <h1 class="text-3xl font-extrabold tracking-tight mb-6 text-gray-900">訂單中心</h1>
+            <div class="flex gap-8 border-b border-gray-100 mb-8">
+                <button onclick="switchTab('active')" id="tab-active" class="tab-btn active">
+                    進行中 <span id="count-active" class="ml-1 opacity-50 text-xs"></span>
+                </button>
+                <button onclick="switchTab('history')" id="tab-history" class="tab-btn">
+                    歷史紀錄 <span id="count-history" class="ml-1 opacity-50 text-xs"></span>
+                </button>
+            </div>
+        </header>
+
+        <div id="orders-container" class="space-y-4">
+            <div class="animate-pulse space-y-4">
+                <div class="h-24 bg-white rounded-[24px]"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const _supabase = supabase.createClient('https://oikubhlwdbxrfhifqusn.supabase.co', 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy');
+        const DISCORD_WEBHOOK_URL = 'https://discordapp.com/api/webhooks/1459853932724617402/U28uPKZSEqe37V14Z7dPNZ-RDaeSRhL_9113skzOKJ9F1bUDiVvQ2LxGgfx7p0XM6p1h';
+        
+        let allOrders = [];
+        let currentView = 'active';
+
+        _supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session) {
+                document.getElementById('user-email-display').innerText = session.user.email;
+                document.getElementById('user-email-display').classList.remove('hidden');
+                fetchData(session.user.email);
+            } else {
+                location.href = 'index.html';
+            }
+        });
+
+        async function fetchData(email) {
+            const { data, error } = await _supabase
+                .from('orders')
+                .select('*')
+                .eq('user_email', email)
+                .order('created_at', { ascending: false });
+
+            if (!error) {
+                allOrders = data;
+                render();
+            }
+        }
+
+        function switchTab(view) {
+            currentView = view;
+            document.getElementById('tab-active').className = view === 'active' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-history').className = view === 'history' ? 'tab-btn active' : 'tab-btn';
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('orders-container');
+            const filtered = allOrders.filter(o => 
+                currentView === 'active' ? o.status !== 'completed' : o.status === 'completed'
+            );
+
+            document.getElementById('count-active').innerText = allOrders.filter(o => o.status !== 'completed').length;
+            document.getElementById('count-history').innerText = allOrders.filter(o => o.status === 'completed').length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="py-20 text-center text-gray-400 font-medium">目前沒有${currentView === 'active' ? '進行中' : '歷史'}的訂單</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(order => {
+                const mainItem = order.items[0];
+                return `
+                <div class="order-card" id="card-${order.id}" onclick="this.classList.toggle('active')">
+                    <div class="p-6 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <img src="${mainItem.image || 'photo/S__38223874.jpg'}" class="w-14 h-14 object-cover rounded-xl">
+                            <div class="text-left">
+                                <h3 class="font-bold text-gray-900">${mainItem.name} ${order.items.length > 1 ? '等' : ''}</h3>
+                                <p class="text-[11px] text-gray-400 font-mono tracking-tighter">${new Date(order.created_at).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black mb-1">NT$ ${order.total_amount.toLocaleString()}</p>
+                            <span class="badge badge-${order.status}">${translateStatus(order.status)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-wrapper">
+                        <div class="detail-content px-6 pb-6">
+                            <div class="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-100 text-xs space-y-1 text-gray-600">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">收件資訊</p>
+                                <p><span class="font-bold text-gray-900">${order.user_name || '未提供'}</span> · ${order.user_phone || '未提供'}</p>
+                                <p class="leading-relaxed">${order.shipping_address || '未提供地址'}</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-2xl p-4 text-xs space-y-2 border border-gray-100">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">購物明細</p>
+                                ${order.items.map(i => `
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">${i.name} x${i.qty}</span>
+                                        <span class="font-medium text-gray-900">NT$ ${i.price * i.qty}</span>
+                                    </div>
+                                `).join('')}
+                                <div class="border-t pt-3 mt-2">
+                                    ${renderAction(order)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderAction(order) {
+            if (order.status === 'delivered') {
+                return `<button onclick="event.stopPropagation(); finishOrder('${order.id}')" class="apple-btn">確認收貨並結案</button>`;
+            }
+            if (order.status === 'completed') {
+                return `<p class="text-center text-gray-400 text-[11px] font-medium">✅ 此訂單已於交易完成後結案</p>`;
+            }
+            return `<p class="text-center text-blue-600 text-[11px] font-bold tracking-wide">⏳ 職人正在為您的訂單進行${translateStatus(order.status)}</p>`;
+        }
+
+        async function finishOrder(id) {
+            if (!confirm('確認收到商品了嗎？結案後訂單將移至歷史紀錄。')) return;
+            
+            const orderData = allOrders.find(o => o.id === id);
+            const card = document.getElementById(`card-${id}`);
+            card.classList.add('finishing');
+
+            const { error } = await _supabase.from('orders').update({ status: 'completed' }).eq('id', id);
+            
+            if (!error) {
+                // 發送 Discord 結案通知
+                await sendCompletionNotify(orderData);
+
+                setTimeout(() => {
+                    const sessionEmail = document.getElementById('user-email-display').innerText;
+                    fetchData(sessionEmail);
+                    alert('感謝您的支持！訂單已圓滿結案。');
+                }, 400);
+            } else {
+                alert('更新失敗：' + error.message);
+                card.classList.remove('finishing');
+            }
+        }
+
+        async function sendCompletionNotify(order) {
+            const payload = {
+                username: "EJ 結案助手",
+                embeds: [{
+                    title: "✅ 客戶已確認收貨！",
+                    description: `訂單 ID: \`${order.id}\``,
+                    color: 3066993, // 綠色
+                    fields: [
+                        { name: "👤 客戶", value: order.user_name || '未知', inline: true },
+                        { name: "💰 金額", value: `NT$ ${order.total_amount.toLocaleString()}`, inline: true },
+                        { name: "📍 地址", value: order.shipping_address, inline: false }
+                    ],
+                    footer: { text: "Eric Justin Studio | 訂單圓滿結案" },
+                    timestamp: new Date()
+                }]
+            };
+
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (e) { console.error("通知發送失敗", e); }
+        }
+
+        function translateStatus(s) {
+            const m = { 'pending': '準備中', 'processing': '手工製作', 'delivered': '已出貨', 'completed': '已完成' };
+            return m[s] || s;
+        }
+    </script>
+</body>
+</html>

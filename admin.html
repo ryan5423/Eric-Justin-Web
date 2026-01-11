@@ -3,94 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eric Justin | 完整管理後台</title>
+    <title>EriJu | 萬能管理後台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #f5f5f7; font-family: -apple-system, sans-serif; }
-        .product-card { background: white; border-radius: 20px; border: 1px solid #d2d2d7; transition: all 0.3s; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        body { background-color: #f5f5f7; font-family: -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+        .glass-nav { background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+        .card { background: white; border-radius: 28px; border: 1px solid rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,0.06); }
+        
+        .tab-btn { padding: 8px 18px; border-radius: 12px; font-weight: bold; font-size: 13px; transition: 0.2s; position: relative; }
+        .tab-btn.active { background: #0071e3; color: white; box-shadow: 0 4px 10px rgba(0,113,227,0.3); }
+        .tab-btn.inactive { color: #86868b; }
+
+        .badge-dot { position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; background-color: #ff3b30; border: 2px solid white; border-radius: 50%; display: none; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .modal.active { display: flex; }
-        input, textarea, select { background: #fbfbfd; border: 1px solid #d2d2d7; border-radius: 10px; padding: 10px; width: 100%; font-size: 14px; }
-        .status-badge { padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; }
-        .status-true { background: #eafaf1; color: #27ae60; }
-        .status-false { background: #fff1f0; color: #ff4d4f; }
-        .btn-upload { background: #e2e2e7; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.2s; height: 40px; }
-        .btn-upload:hover { background: #d2d2d7; }
-        .uploading { opacity: 0.5; pointer-events: none; }
+        
+        input, textarea, select { background: #fbfbfd; border: 1px solid #d2d2d7; border-radius: 12px; padding: 12px; width: 100%; font-size: 14px; outline: none; transition: 0.2s; }
+        input:focus { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0,113,227,0.1); }
+        
+        .status-badge { padding: 4px 12px; border-radius: 100px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        
+        /* 訂單側邊顏色條 */
+        .border-pending { border-left: 8px solid #ff9500; }
+        .border-processing { border-left: 8px solid #0071e3; }
+        .border-delivered { border-left: 8px solid #34c759; }
+        .border-completed { border-left: 8px solid #d2d2d7; background-color: #fafafa; opacity: 0.8; }
     </style>
 </head>
-<body class="p-6 md:p-12">
+<body class="pb-20">
 
-    <div class="max-w-5xl mx-auto">
-        <header class="flex justify-between items-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-900 tracking-tight">作品管理系統</h1>
-            <button onclick="openAddModal()" class="bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-blue-700 transition">+ 新增作品</button>
-        </header>
+    <nav class="glass-nav fixed top-0 w-full z-50 h-[64px] flex items-center px-6">
+        <div class="max-w-6xl mx-auto w-full flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white font-bold text-xs">EriJu</div>
+                <span class="font-black tracking-tight text-lg">Control <span class="text-blue-600">Center</span></span>
+            </div>
+            <div class="flex gap-1 bg-gray-100 p-1 rounded-[14px] border border-gray-200">
+                <button onclick="switchMainTab('products')" id="main-tab-products" class="tab-btn active">作品庫</button>
+                <button onclick="switchMainTab('orders')" id="main-tab-orders" class="tab-btn inactive">訂單流水線</button>
+            </div>
+        </div>
+    </nav>
 
-        <div id="product-list" class="grid grid-cols-1 gap-4"></div>
-    </div>
+    <main class="max-w-5xl mx-auto pt-28 px-6">
+        <section id="section-products">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">目前作品庫</h2>
+                    <p class="text-gray-500 text-sm mt-1">管理前台展示的產品資訊</p>
+                </div>
+                <button onclick="openAddModal()" class="bg-black text-white px-7 py-3 rounded-full font-bold shadow-xl hover:scale-105 transition active:scale-95 text-sm">+ 新增作品</button>
+            </div>
+            <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
 
-    <div id="edit-modal" class="modal">
-        <div class="bg-white rounded-[32px] p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl mx-4">
-            <div class="flex justify-between items-center mb-8">
-                <h2 id="modal-title" class="text-2xl font-bold">編輯作品</h2>
-                <button onclick="closeModal()" class="text-gray-400 text-3xl">&times;</button>
+        <section id="section-orders" class="hidden">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">訂單流水線</h2>
+                    <p class="text-gray-500 text-sm mt-1">即時處理客戶寄送需求</p>
+                </div>
             </div>
             
-            <form id="edit-form" class="space-y-5">
+            <div class="flex space-x-2 mb-8 bg-white p-1.5 rounded-2xl w-fit shadow-sm border border-gray-100">
+                <button onclick="switchOrderSubTab('pending')" id="order-tab-pending" class="tab-btn active text-xs">待處理 <span id="dot-pending" class="badge-dot"></span></button>
+                <button onclick="switchOrderSubTab('processing')" id="order-tab-processing" class="tab-btn inactive text-xs">製作中 <span id="dot-processing" class="badge-dot"></span></button>
+                <button onclick="switchOrderSubTab('delivered')" id="order-tab-delivered" class="tab-btn inactive text-xs">已寄出 <span id="dot-delivered" class="badge-dot"></span></button>
+                <button onclick="switchOrderSubTab('completed')" id="order-tab-completed" class="tab-btn inactive text-xs">已完成結案 <span id="dot-completed" class="badge-dot"></span></button>
+            </div>
+            
+            <div id="order-list" class="space-y-6"></div>
+        </section>
+    </main>
+
+    <div id="edit-modal" class="modal">
+        <div class="bg-white rounded-[40px] p-10 max-w-4xl w-full max-h-[85vh] overflow-y-auto shadow-2xl mx-4 relative">
+            <div class="flex justify-between items-center mb-10">
+                <h2 id="modal-title" class="text-3xl font-black">編輯作品詳情</h2>
+                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full text-gray-400 text-2xl hover:bg-red-50 hover:text-red-500 transition">×</button>
+            </div>
+            <form id="edit-form" class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <input type="hidden" id="edit-id">
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-xs font-bold text-gray-400 mb-1">作品名稱</label><input type="text" id="edit-name" required></div>
-                    <div><label class="block text-xs font-bold text-gray-400 mb-1">價格</label><input type="number" id="edit-price" required></div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-xs font-bold text-gray-400 mb-1">標籤 (Tag)</label><input type="text" id="edit-tag"></div>
+                <div class="space-y-6">
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 mb-1">供應狀態</label>
-                        <select id="edit-status">
-                            <option value="true">供應中</option>
-                            <option value="false">缺貨中</option>
-                        </select>
+                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">基本資訊</label>
+                        <div class="space-y-3">
+                            <input type="text" id="edit-name" placeholder="作品名稱" required>
+                            <input type="number" id="edit-price" placeholder="價格 (NT$)" required>
+                            <input type="text" id="edit-tag" placeholder="標籤 (例: 2026 限定)">
+                            <select id="edit-status">
+                                <option value="true">✅ 供應中</option>
+                                <option value="false">❌ 缺貨中</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">作品故事</label>
+                        <textarea id="edit-desc" rows="4" placeholder="介紹您的創作初衷..."></textarea>
                     </div>
                 </div>
-
-                <div><label class="block text-xs font-bold text-gray-400 mb-1">主描述</label><textarea id="edit-desc" rows="2"></textarea></div>
-
-                <div class="bg-gray-50 p-4 rounded-xl grid grid-cols-3 gap-4">
-                    <div class="col-span-1"><label class="block text-xs font-bold text-gray-400 mb-1">工法標題</label><input type="text" id="edit-detail-title"></div>
-                    <div class="col-span-2"><label class="block text-xs font-bold text-gray-400 mb-1">工法內容</label><input type="text" id="edit-detail"></div>
-                </div>
-
-                <div class="space-y-4">
-                    <label class="block text-xs font-bold text-gray-400">圖片資源 (URL 會自動生成)</label>
-                    
-                    <div class="flex items-center gap-3">
-                        <div class="flex-1"><input type="text" id="edit-img1" placeholder="主圖 URL" required></div>
-                        <button type="button" class="btn-upload flex items-center justify-center" onclick="document.getElementById('file-1').click()">上傳主圖</button>
-                        <input type="file" id="file-1" class="hidden" accept="image/*" onchange="handleFileUpload(this, 'edit-img1')">
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">職人工法</label>
+                        <div class="bg-gray-50 p-5 rounded-2xl space-y-3 border border-gray-100">
+                            <input type="text" id="edit-detail-title" placeholder="特色標題">
+                            <textarea id="edit-detail" rows="3" placeholder="詳細說明..."></textarea>
+                        </div>
                     </div>
-
-                    <div class="flex items-center gap-3">
-                        <div class="flex-1"><input type="text" id="edit-img2" placeholder="圖 2 URL (選填)"></div>
-                        <button type="button" class="btn-upload flex items-center justify-center" onclick="document.getElementById('file-2').click()">上傳圖 2</button>
-                        <input type="file" id="file-2" class="hidden" accept="image/*" onchange="handleFileUpload(this, 'edit-img2')">
-                    </div>
-
-                    <div class="flex items-center gap-3">
-                        <div class="flex-1"><input type="text" id="edit-img3" placeholder="圖 3 URL (選填)"></div>
-                        <button type="button" class="btn-upload flex items-center justify-center" onclick="document.getElementById('file-3').click()">上傳圖 3</button>
-                        <input type="file" id="file-3" class="hidden" accept="image/*" onchange="handleFileUpload(this, 'edit-img3')">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">主圖網址</label>
+                        <input type="text" id="edit-img1" placeholder="圖片 URL" required>
                     </div>
                 </div>
-
-                <div class="flex justify-between items-center pt-6 border-t mt-6">
-                    <button type="button" id="delete-btn" onclick="deleteProduct()" class="text-red-500 font-bold hover:bg-red-50 px-4 py-2 rounded-lg transition">刪除作品</button>
-                    <div class="flex space-x-3">
-                        <button type="button" onclick="closeModal()" class="px-6 py-2 text-gray-400">取消</button>
-                        <button type="submit" class="bg-black text-white px-10 py-2 rounded-full font-bold shadow-lg hover:opacity-80 transition">儲存並發佈</button>
+                <div class="md:col-span-2 flex justify-between items-center pt-8 border-t mt-4">
+                    <button type="button" id="delete-btn" onclick="deleteProduct()" class="text-red-500 font-bold px-6 py-3 rounded-2xl hover:bg-red-50">刪除作品</button>
+                    <div class="flex gap-4">
+                        <button type="button" onclick="closeModal()" class="px-8 py-3 text-gray-400 font-bold">取消</button>
+                        <button type="submit" class="bg-[#0071e3] text-white px-12 py-3 rounded-full font-bold shadow-lg">儲存並發佈</button>
                     </div>
                 </div>
             </form>
@@ -98,96 +130,150 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://oikubhlwdbxrfhifqusn.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const _supabase = supabase.createClient('https://oikubhlwdbxrfhifqusn.supabase.co', 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy');
+        let currentOrderTab = 'pending';
 
-        async function fetchProducts() {
-            const { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false });
-            if (error) return console.error(error);
-            
-            const container = document.getElementById('product-list');
-            container.innerHTML = '';
-            products.forEach(p => {
-                const card = document.createElement('div');
-                card.className = 'product-card p-4 flex items-center justify-between';
-                card.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <img src="${p.image_url}" class="w-16 h-16 object-cover rounded-xl bg-gray-100" onerror="this.src='https://via.placeholder.com/150?text=無圖片'">
-                        <div>
-                            <div class="flex items-center gap-2"><span class="status-badge ${p.status ? 'status-true' : 'status-false'}">${p.status?'供應中':'缺貨'}</span></div>
-                            <h3 class="font-bold text-gray-800">${p.name}</h3>
-                            <p class="text-xs text-gray-400 font-mono">ID: ${p.id} | NT$ ${p.price}</p>
-                        </div>
-                    </div>
-                    <button onclick='openEditModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="bg-gray-100 px-5 py-2 rounded-lg text-sm font-bold hover:bg-black hover:text-white transition">編輯詳情</button>
-                `;
-                container.appendChild(card);
+        window.onload = () => { 
+            fetchProducts(); 
+            fetchOrders(); 
+            refreshBadges(); 
+        };
+
+        async function refreshBadges() {
+            const { data: allOrders } = await _supabase.from('orders').select('status');
+            if (!allOrders) return;
+            ['pending', 'processing', 'delivered', 'completed'].forEach(s => {
+                const count = allOrders.filter(o => o.status === s).length;
+                document.getElementById(`dot-${s}`).style.display = count > 0 ? 'block' : 'none';
             });
         }
 
-        async function handleFileUpload(input, targetId) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const btn = input.previousElementSibling;
-            const originalText = btn.innerText;
-            btn.innerText = "上傳中...";
-            btn.classList.add('uploading');
-
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
-
-            try {
-                const { data, error } = await _supabase.storage
-                    .from('product-images')
-                    .upload(fileName, file);
-
-                if (error) throw error;
-
-                const { data: { publicUrl } } = _supabase.storage
-                    .from('product-images')
-                    .getPublicUrl(fileName);
-
-                // ✅ 關鍵：直接同步到對應的 input 欄位
-                const targetInput = document.getElementById(targetId);
-                targetInput.value = publicUrl;
-                
-                btn.innerText = "上傳成功";
-                btn.style.background = "#eafaf1";
-                btn.style.color = "#27ae60";
-                setTimeout(() => { btn.innerText = originalText; btn.style = ""; }, 2000);
-
-            } catch (err) {
-                alert('上傳失敗: ' + err.message);
-                btn.innerText = "重試";
-            } finally {
-                btn.classList.remove('uploading');
-            }
+        function switchMainTab(target) {
+            document.getElementById('section-products').classList.toggle('hidden', target !== 'products');
+            document.getElementById('section-orders').classList.toggle('hidden', target !== 'orders');
+            document.getElementById('main-tab-products').className = target === 'products' ? 'tab-btn active' : 'tab-btn inactive';
+            document.getElementById('main-tab-orders').className = target === 'orders' ? 'tab-btn active' : 'tab-btn inactive';
         }
 
+        async function fetchProducts() {
+            const { data } = await _supabase.from('products').select('*').order('id', { ascending: false });
+            if (!data) return;
+            document.getElementById('product-list').innerHTML = data.map(p => `
+                <div class="card p-5 flex items-center justify-between">
+                    <div class="flex items-center space-x-5">
+                        <img src="${p.image_url}" class="w-16 h-16 object-cover rounded-xl bg-gray-50 border">
+                        <div>
+                            <span class="status-badge ${p.status ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}">${p.status?'供應中':'缺貨'}</span>
+                            <h3 class="font-bold text-gray-900 mt-1">${p.name}</h3>
+                            <p class="text-xs text-blue-600 font-bold">NT$ ${p.price.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <button onclick='openEditModal(${JSON.stringify(p)})' class="bg-gray-100 px-5 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition">管理</button>
+                </div>
+            `).join('');
+        }
+
+        async function fetchOrders() {
+            const list = document.getElementById('order-list');
+            const { data: orders } = await _supabase.from('orders').select('*').eq('status', currentOrderTab).order('created_at', { ascending: false });
+            
+            if (!orders || orders.length === 0) {
+                list.innerHTML = `<div class="text-center py-24 bg-white rounded-[32px] border border-dashed text-gray-400">目前沒有狀態為「${translateStatus(currentOrderTab)}」的訂單</div>`;
+                return;
+            }
+
+            list.innerHTML = orders.map(order => `
+                <div class="card p-8 border-${order.status}">
+                    <div class="flex flex-wrap justify-between items-start gap-4 mb-8">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-black px-2 py-0.5 rounded ${order.status === 'completed' ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}">${translateStatus(order.status)}</span>
+                            </div>
+                            <h3 class="text-2xl font-black text-gray-900">${order.user_name || '客戶'}</h3>
+                            <p class="text-blue-600 font-bold tracking-tight mt-1 text-lg">${order.user_phone || '無電話'}</p>
+                        </div>
+                        <div class="text-right">
+                             <p class="text-[10px] text-gray-400 font-mono uppercase tracking-widest mb-1">${new Date(order.created_at).toLocaleString()}</p>
+                             <p class="text-3xl font-black text-gray-900">NT$ ${order.total_amount.toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 mb-6">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-[10px] font-black bg-blue-600 text-white px-2 py-0.5 rounded">收件地址</span>
+                        </div>
+                        <p class="text-gray-700 font-medium leading-relaxed">
+                            ${order.shipping_address || '未填寫寄送資訊'}
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50/80 rounded-3xl p-6 mb-8 space-y-3">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">明細項目</p>
+                        ${order.items.map(i => `
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">${i.name} <span class="text-gray-400 font-bold ml-1">x${i.qty}</span></span>
+                                <span class="font-bold">NT$ ${(i.price * i.qty).toLocaleString()}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="flex flex-wrap justify-between items-center gap-4">
+                        <p class="text-xs text-gray-400 font-medium">帳號：${order.user_email}</p>
+                        <div class="flex gap-3">
+                            <a href="tel:${order.user_phone}" class="px-6 py-3 border border-gray-200 rounded-full text-xs font-bold hover:bg-white shadow-sm transition">撥打電話</a>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.shipping_address)}" target="_blank" class="px-6 py-3 border border-gray-200 rounded-full text-xs font-bold hover:bg-white shadow-sm transition">開啟地圖</a>
+                            ${renderOrderButtons(order)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function translateStatus(s) {
+            const m = { 'pending': '待處理', 'processing': '製作中', 'delivered': '已寄出', 'completed': '客戶已收貨' };
+            return m[s] || s;
+        }
+
+        function renderOrderButtons(order) {
+            if (order.status === 'pending') return `<button onclick="updateOrderStatus('${order.id}', 'processing')" class="bg-blue-600 text-white px-8 py-3 rounded-full text-xs font-bold shadow-lg shadow-blue-200">開始製作</button>`;
+            if (order.status === 'processing') return `<button onclick="updateOrderStatus('${order.id}', 'delivered')" class="bg-green-600 text-white px-8 py-3 rounded-full text-xs font-bold shadow-lg shadow-green-200">完成出貨</button>`;
+            if (order.status === 'delivered') return `<button onclick="updateOrderStatus('${order.id}', 'completed')" class="bg-gray-800 text-white px-8 py-3 rounded-full text-xs font-bold">手動結案</button>`;
+            return `<span class="text-xs text-gray-400 font-bold bg-gray-200 px-6 py-3 rounded-full">✅ 交易已完成</span>`;
+        }
+
+        async function updateOrderStatus(id, newStatus) {
+            const { error } = await _supabase.from('orders').update({ status: newStatus }).eq('id', id);
+            if (!error) { fetchOrders(); refreshBadges(); }
+        }
+
+        function switchOrderSubTab(tab) {
+            currentOrderTab = tab;
+            ['pending', 'processing', 'delivered', 'completed'].forEach(t => {
+                document.getElementById(`order-tab-${t}`).className = tab === t ? 'tab-btn active text-xs' : 'tab-btn inactive text-xs';
+            });
+            fetchOrders();
+        }
+
+        // 作品管理函數 (保持不變)
         function openAddModal() {
             document.getElementById('edit-form').reset();
             document.getElementById('edit-id').value = '';
-            document.getElementById('modal-title').innerText = '新增全新作品';
+            document.getElementById('modal-title').innerText = '新增作品';
             document.getElementById('delete-btn').style.display = 'none';
             document.getElementById('edit-modal').classList.add('active');
         }
 
         function openEditModal(p) {
-            document.getElementById('modal-title').innerText = '編輯作品詳情';
-            document.getElementById('delete-btn').style.display = 'block';
             document.getElementById('edit-id').value = p.id;
             document.getElementById('edit-name').value = p.name;
             document.getElementById('edit-price').value = p.price;
-            document.getElementById('edit-tag').value = p.tag || '';
             document.getElementById('edit-status').value = p.status.toString();
             document.getElementById('edit-desc').value = p.description || '';
             document.getElementById('edit-detail-title').value = p.detail_title || '';
             document.getElementById('edit-detail').value = p.detail || '';
             document.getElementById('edit-img1').value = p.image_url || '';
-            document.getElementById('edit-img2').value = p.image_url2 || '';
-            document.getElementById('edit-img3').value = p.image_url3 || '';
+            document.getElementById('modal-title').innerText = '編輯作品';
+            document.getElementById('delete-btn').style.display = 'block';
             document.getElementById('edit-modal').classList.add('active');
         }
 
@@ -199,39 +285,22 @@
             const payload = {
                 name: document.getElementById('edit-name').value,
                 price: parseInt(document.getElementById('edit-price').value),
-                tag: document.getElementById('edit-tag').value,
                 status: document.getElementById('edit-status').value === 'true',
                 description: document.getElementById('edit-desc').value,
                 detail_title: document.getElementById('edit-detail-title').value,
                 detail: document.getElementById('edit-detail').value,
                 image_url: document.getElementById('edit-img1').value,
-                image_url2: document.getElementById('edit-img2').value,
-                image_url3: document.getElementById('edit-img3').value,
             };
-
-            const { error } = id 
-                ? await _supabase.from('products').update(payload).eq('id', id)
-                : await _supabase.from('products').insert([payload]);
-
-            if (error) {
-                alert('儲存失敗: ' + error.message);
-            } else {
-                alert('作品已成功發佈！');
-                closeModal();
-                fetchProducts();
-            }
+            const { error } = id ? await _supabase.from('products').update(payload).eq('id', id) : await _supabase.from('products').insert([payload]);
+            if (!error) { closeModal(); fetchProducts(); } else { alert(error.message); }
         });
 
         async function deleteProduct() {
-            const id = document.getElementById('edit-id').value;
-            if (confirm(`確定要永久刪除此作品嗎？`)) {
-                const { error } = await _supabase.from('products').delete().eq('id', id);
-                if (error) alert('刪除失敗');
-                else { closeModal(); fetchProducts(); }
+            if (confirm('確定刪除此作品？此動作無法復原。')) {
+                await _supabase.from('products').delete().eq('id', document.getElementById('edit-id').value);
+                closeModal(); fetchProducts();
             }
         }
-
-        fetchProducts();
     </script>
 </body>
 </html>
