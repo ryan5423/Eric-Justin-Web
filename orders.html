@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://unpkg.com/@studio-freight/lenis@1.0.33/dist/lenis.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Noto+Sans+TC:wght@300;400;700;900&display=swap');
         
         :root { 
             --accent: #0f172a; 
@@ -19,11 +19,11 @@
         body { 
             background-color: var(--bg-light);
             color: #334155;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
             letter-spacing: -0.01em;
         }
 
-        /* 頂級導覽列 - 保持全站統一 */
+        /* 頂級導覽列 */
         .floating-nav { 
             background: rgba(255, 255, 255, 0.8) !important; 
             backdrop-filter: blur(20px) saturate(160%) !important;
@@ -33,7 +33,6 @@
             z-index: 1000;
         }
 
-        /* 使用者選單樣式同步 */
         .user-menu {
             opacity: 0; visibility: hidden; transform: scale(0.95) translateY(10px);
             position: absolute; right: 0; top: 60px; width: 240px;
@@ -42,15 +41,13 @@
         }
         #auth-section:hover .user-menu { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
 
-        /* 奢華感標籤切換 */
         .tab-group { background: #f1f5f9; padding: 4px; border-radius: 16px; display: inline-flex; }
         .tab-btn { 
-            padding: 8px 24px; font-size: 11px; font-weight: 900; color: #94a3b8; 
-            transition: all 0.4s; border-radius: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 8px 24px; font-size: 12px; font-weight: 900; color: #94a3b8; 
+            transition: all 0.4s; border-radius: 12px; letter-spacing: 0.05em;
         }
         .tab-btn.active { background: white; color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
-        /* 訂單卡片設計 - 職人美學 */
         .order-card { 
             background: #ffffff; border-radius: 32px; border: 1px solid rgba(0,0,0,0.02);
             transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden;
@@ -63,17 +60,15 @@
         .order-card.active .detail-wrapper { grid-template-rows: 1fr; opacity: 1; }
         .detail-content { overflow: hidden; }
 
-        /* 狀態 Badge */
         .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .status-text { font-size: 10px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+        .status-text { font-size: 11px; font-weight: 900; letter-spacing: 0.05em; }
 
-        /* 全寬結案按鈕 */
         .action-btn { 
             background: #0f172a; color: white; padding: 16px; border-radius: 20px; 
-            font-size: 11px; font-weight: 900; letter-spacing: 0.2em; width: 100%;
+            font-size: 12px; font-weight: 900; letter-spacing: 0.1em; width: 100%;
             transition: all 0.3s;
         }
-        .action-btn:hover { background: #334155; letter-spacing: 0.25em; }
+        .action-btn:hover { background: #334155; transform: scale(1.01); }
         
         .finishing { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
     </style>
@@ -89,8 +84,8 @@
         </a>
         
         <div class="flex items-center gap-8 text-[13px] font-bold tracking-widest uppercase">
-            <a href="catalog.html" class="text-slate-400 hover:text-slate-900 transition">Catalog</a>
-            <a href="about.html" class="text-slate-400 hover:text-slate-900 transition">About</a>
+            <a href="catalog.html" class="text-slate-400 hover:text-slate-900 transition">選購</a>
+            <a href="about.html" class="text-slate-400 hover:text-slate-900 transition">關於</a>
             <div id="auth-section" class="relative"></div>
             <a href="cart.html" class="relative group p-2">
                 <span class="text-xl">🛒</span>
@@ -101,12 +96,12 @@
 
     <main class="max-w-3xl mx-auto px-6">
         <div class="mb-16">
-            <p class="text-[10px] font-black tracking-[0.4em] text-slate-300 uppercase mb-4">Management</p>
+            <p class="text-[10px] font-black tracking-[0.4em] text-slate-300 uppercase mb-4">MANAGEMENT</p>
             <div class="flex items-end justify-between">
-                <h1 class="text-5xl font-black tracking-tighter text-slate-900 uppercase">My Archive</h1>
+                <h1 class="text-5xl font-black tracking-tighter text-slate-900">我的訂單存檔</h1>
                 <div class="tab-group">
-                    <button onclick="switchTab('active')" id="tab-active" class="tab-btn active">Active</button>
-                    <button onclick="switchTab('history')" id="tab-history" class="tab-btn">History</button>
+                    <button onclick="switchTab('active')" id="tab-active" class="tab-btn active">進行中</button>
+                    <button onclick="switchTab('history')" id="tab-history" class="tab-btn">歷史紀錄</button>
                 </div>
             </div>
         </div>
@@ -149,11 +144,11 @@
                     </div>
                     <div class="user-menu p-3">
                         <div class="px-4 py-3 bg-slate-50 rounded-2xl mb-2">
-                            <p class="text-slate-900 text-[10px] font-black uppercase tracking-widest">${session.user.user_metadata.full_name || 'Member'}</p>
+                            <p class="text-slate-900 text-[10px] font-black uppercase tracking-widest">${session.user.user_metadata.full_name || '會員'}</p>
                             <p class="text-slate-400 text-[9px] truncate">${session.user.email}</p>
                         </div>
-                        <a href="catalog.html" class="flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-all">✨ NEW COLLECTION</a>
-                        <button onclick="_supabase.auth.signOut().then(()=>location.reload())" class="w-full text-left flex items-center gap-3 p-3 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all">🚪 SIGN OUT</button>
+                        <a href="catalog.html" class="flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-all">✨ 新品系列</a>
+                        <button onclick="_supabase.auth.signOut().then(()=>location.reload())" class="w-full text-left flex items-center gap-3 p-3 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all">🚪 登出帳號</button>
                     </div>
                 </div>`;
         }
@@ -175,7 +170,7 @@
             const filtered = allOrders.filter(o => currentView === 'active' ? o.status !== 'completed' : o.status === 'completed');
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="py-24 text-center text-slate-300 font-bold uppercase tracking-[0.3em] text-[10px]">Empty Archive</div>`;
+                container.innerHTML = `<div class="py-24 text-center text-slate-300 font-bold uppercase tracking-[0.3em] text-[10px]">尚無訂單紀錄</div>`;
                 return;
             }
 
@@ -193,18 +188,18 @@
                                 ${items.length > 1 ? `<div class="absolute -top-3 -right-3 bg-white text-slate-900 text-[10px] w-7 h-7 flex items-center justify-center rounded-full border border-slate-100 font-black shadow-sm">+${items.length-1}</div>` : ''}
                             </div>
                             <div>
-                                <h3 class="font-black text-slate-900 text-xl tracking-tighter mb-1">${firstItem.name || 'Works'}</h3>
+                                <h3 class="font-black text-slate-900 text-xl tracking-tighter mb-1">${firstItem.name || '作品內容'}</h3>
                                 <div class="flex items-center">
                                     <span class="status-dot ${statusInfo.bg}"></span>
                                     <span class="status-text ${statusInfo.text}">${statusInfo.label}</span>
                                     <span class="mx-3 w-[1px] h-3 bg-slate-200"></span>
-                                    <span class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">${new Date(order.created_at).toLocaleDateString()}</span>
+                                    <span class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">${new Date(order.created_at).toLocaleDateString('zh-TW')}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="text-right">
                             <p class="font-black text-slate-900 text-2xl tracking-tighter">NT$ ${order.total_amount.toLocaleString()}</p>
-                            <p class="text-[9px] font-bold text-slate-300 uppercase mt-1 tracking-widest">Order Summary</p>
+                            <p class="text-[9px] font-bold text-slate-300 uppercase mt-1 tracking-widest">訂單總額</p>
                         </div>
                     </div>
                     
@@ -213,13 +208,13 @@
                             <div class="h-[1px] bg-slate-50 w-full mb-8"></div>
                             <div class="grid md:grid-cols-2 gap-12 mb-10">
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Destination</p>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">配送資訊</p>
                                     <p class="text-sm font-black text-slate-900">${order.user_name}</p>
                                     <p class="text-xs text-slate-500 mt-1">${order.user_phone}</p>
                                     <p class="text-xs text-slate-400 mt-3 leading-relaxed">${order.shipping_address}</p>
                                 </div>
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Manifest</p>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">商品清單</p>
                                     <div class="space-y-3">
                                         ${items.map(i => `
                                             <div class="flex justify-between text-xs font-bold">
@@ -239,23 +234,23 @@
 
         function getStatusStyle(s) {
             const styles = {
-                'pending': { label: 'In Queue', bg: 'bg-amber-400', text: 'text-amber-500' },
-                'processing': { label: 'Crafting', bg: 'bg-blue-500', text: 'text-blue-600' },
-                'delivered': { label: 'In Transit', bg: 'bg-green-500', text: 'text-green-600' },
-                'completed': { label: 'Archived', bg: 'bg-slate-300', text: 'text-slate-400' }
+                'pending': { label: '排單中', bg: 'bg-amber-400', text: 'text-amber-500' },
+                'processing': { label: '工藝製作中', bg: 'bg-blue-500', text: 'text-blue-600' },
+                'delivered': { label: '物流配送中', bg: 'bg-green-500', text: 'text-green-600' },
+                'completed': { label: '已歸檔', bg: 'bg-slate-300', text: 'text-slate-400' }
             };
             return styles[s] || { label: s, bg: 'bg-slate-200', text: 'text-slate-400' };
         }
 
         function renderAction(order) {
             if (order.status === 'delivered') {
-                return `<button onclick="event.stopPropagation(); finishOrder('${order.id}')" class="action-btn">CONFIRM DELIVERY & ARCHIVE</button>`;
+                return `<button onclick="event.stopPropagation(); finishOrder('${order.id}')" class="action-btn">確認收貨並存檔</button>`;
             }
             if (order.status === 'completed') {
-                return `<p class="text-center text-slate-300 text-[10px] font-black tracking-[0.3em] uppercase py-4">This order has been successfully archived</p>`;
+                return `<p class="text-center text-slate-300 text-[10px] font-black tracking-[0.3em] uppercase py-4">此訂單已完成並歸檔</p>`;
             }
             return `<div class="text-center py-6 bg-slate-50 rounded-[24px] border border-dashed border-slate-200">
-                        <p class="text-slate-400 text-[9px] font-black tracking-[0.4em] uppercase">Artisan is preparing your package</p>
+                        <p class="text-slate-400 text-[9px] font-black tracking-[0.4em] uppercase">職人正為您準備包裹中</p>
                     </div>`;
         }
 
@@ -265,7 +260,6 @@
             card.classList.add('finishing');
             const { error } = await _supabase.from('orders').update({ status: 'completed' }).eq('id', id);
             if (!error) {
-                await _supabase.functions.invoke('notify-discord', { body: { order_id: id } }).catch(()=>{});
                 setTimeout(() => fetchData(), 400);
             } else {
                 card.classList.remove('finishing');

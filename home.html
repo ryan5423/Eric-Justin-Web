@@ -59,8 +59,9 @@
         .ig-ball:hover { transform: scale(1.1); box-shadow: 0 15px 40px rgba(225, 48, 108, 0.2); }
 
         /* 導覽列核心樣式 */
+        /* 導覽列核心樣式 - 初始設為較清透的半透明 */
         .floating-nav { 
-            background: rgba(255, 255, 255, 0.8); 
+            background: rgba(255, 255, 255, 0.4); /* 初始 40% 透明 */
             backdrop-filter: blur(20px) saturate(160%);
             border: 1px solid rgba(0, 0, 0, 0.05);
             border-radius: 50px; 
@@ -262,14 +263,15 @@
                 });
             });
 
-            // 5. 導覽列變化：修正處（滾動後寬度 95% 且維持 50px 圓角）
+                        // 5. 導覽列變化：修正滾動後顏色，使其保持透明不變純白
             ScrollTrigger.create({
                 start: "top -20",
                 onEnter: () => gsap.to(".floating-nav", { 
                     marginTop: "10px", 
                     width: "95%", 
                     borderRadius: "50px", 
-                    backgroundColor: "white", 
+                    // 關鍵修正：滾動後設為 0.75 透明度，而非 white
+                    backgroundColor: "rgba(255, 255, 255, 0.75)", 
                     duration: 0.6,
                     ease: "expo.out"
                 }),
@@ -277,7 +279,8 @@
                     marginTop: "20px", 
                     width: "90%", 
                     borderRadius: "50px", 
-                    backgroundColor: "rgba(255,255,255,0.8)", 
+                    // 關鍵修正：滾回頂部設為 0.4 透明度
+                    backgroundColor: "rgba(255, 255, 255, 0.4)", 
                     duration: 0.6,
                     ease: "expo.out"
                 })
@@ -337,12 +340,12 @@
                                 </div>
                                 <div class="space-y-1">
                                     <a href="orders.html" class="flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-all group/item">
-                                        <span class="text-base group-hover/item:scale-110 transition-transform">📦</span> ORDER RECORDS
+                                        <span class="text-base group-hover/item:scale-110 transition-transform">📦</span> 訂單記錄
                                     </a>
                                     <div class="h-[1px] bg-slate-100 my-1 mx-2"></div>
                                     <button onclick="_supabase.auth.signOut().then(()=>location.reload())" 
                                             class="w-full flex items-center gap-3 p-3 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all group/logout">
-                                        <span class="text-base group-hover/logout:rotate-12 transition-transform">🚪</span> SIGN OUT
+                                        <span class="text-base group-hover/logout:rotate-12 transition-transform">🚪</span> 登出
                                     </button>
                                 </div>
                             </div>
