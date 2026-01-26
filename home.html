@@ -6,7 +6,6 @@
     <title>Eriju | 官方網站</title>
     
     <script defer src="/_vercel/insights/script.js"></script>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -21,6 +20,7 @@
             --bg-light: #fdfdfd;
         }
         
+        /* Lenis 平滑滾動優化 */
         html.lenis { height: auto; }
         .lenis.lenis-smooth { scroll-behavior: auto !important; }
         .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
@@ -34,6 +34,7 @@
             letter-spacing: -0.02em;
         }
 
+        /* 跟隨滑鼠的環境發光 */
         .glow-bg {
             position: fixed; width: 600px; height: 600px;
             background: radial-gradient(circle, rgba(212, 175, 55, 0.04) 0%, transparent 70%);
@@ -41,6 +42,7 @@
             will-change: transform;
         }
 
+        /* IG 懸浮球 */
         .ig-ball {
             position: fixed; bottom: 40px; right: 40px; width: 70px; height: 70px;
             background: white; border-radius: 50%;
@@ -50,25 +52,25 @@
             border: 1px solid rgba(0,0,0,0.05);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
         .ig-ball svg {
             width: 34px !important; height: 34px !important;
             display: block; fill: url(#ig-grad-fill);
         }
-        
         .ig-ball:hover { transform: scale(1.1); box-shadow: 0 15px 40px rgba(225, 48, 108, 0.2); }
-        .ig-ball:hover svg { transform: rotate(10deg); }
 
+        /* 導覽列核心樣式 */
         .floating-nav { 
             background: rgba(255, 255, 255, 0.8); 
             backdrop-filter: blur(20px) saturate(160%);
             border: 1px solid rgba(0, 0, 0, 0.05);
-            border-radius: 50px; margin-top: 20px;
+            border-radius: 50px; 
+            margin-top: 20px;
             width: 90%; max-width: 1100px; left: 50%; transform: translateX(-50%);
             transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.6s, margin-top 0.6s, background-color 0.6s;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
         }
 
+        /* 內容字體樣式 */
         .hero-title { color: #0f172a; font-weight: 900; letter-spacing: -0.06em; line-height: 0.9; }
         .gold-tag {
             background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
@@ -76,6 +78,7 @@
             border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
         }
 
+        /* 卡片設計 */
         .release-card {
             background: #ffffff; border-radius: 40px; border: 1px solid rgba(0, 0, 0, 0.04);
             transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
@@ -90,9 +93,10 @@
         }
         .btn-luxury:hover { background: #000; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
 
-        /* 重要修正：使用 visibility + opacity 防止跳閃並確保渲染 */
+        /* GSAP 揭露動畫初始化 */
         .reveal { opacity: 0; visibility: hidden; }
 
+        /* 會員選單 */
         .user-menu {
             opacity: 0; visibility: hidden; transform: scale(0.95) translateY(10px);
             position: absolute; right: 0; top: 60px; width: 240px;
@@ -110,9 +114,7 @@
         <svg viewBox="0 0 24 24">
             <defs>
                 <linearGradient id="ig-grad-fill" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" style="stop-color:#f09433;" />
-                    <stop offset="50%" style="stop-color:#dc2743;" />
-                    <stop offset="100%" style="stop-color:#bc1888;" />
+                    <stop offset="0%" style="stop-color:#f09433;" /><stop offset="50%" style="stop-color:#dc2743;" /><stop offset="100%" style="stop-color:#bc1888;" />
                 </linearGradient>
             </defs>
             <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c.796 0 1.441.645 1.441 1.44s-.645 1.44-1.441 1.44c-.795 0-1.439-.645-1.439-1.44s.644-1.44 1.439-1.44z"/></svg>
@@ -161,9 +163,7 @@
                     <div class="aspect-[4/5] overflow-hidden bg-slate-50 relative">
                         <img src="photo/仍然.png" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110">
                         <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-                            <div class="bg-white text-slate-900 px-8 py-4 rounded-full font-bold shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                                立即查看
-                            </div>
+                            <div class="bg-white text-slate-900 px-8 py-4 rounded-full font-bold shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">立即查看</div>
                         </div>
                     </div>
                     <div class="p-10 text-left flex justify-between items-end">
@@ -171,9 +171,7 @@
                             <h3 class="text-3xl font-black mb-3 text-slate-900">可愛小卡系列</h3>
                             <p class="text-slate-400 font-medium">極致質感，卻不失溫度。2月4日同步解鎖。</p>
                         </div>
-                        <div class="w-14 h-14 rounded-full border border-slate-100 flex items-center justify-center text-2xl group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 transform group-hover:translate-x-2">
-                            →
-                        </div>
+                        <div class="w-14 h-14 rounded-full border border-slate-100 flex items-center justify-center text-2xl group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 transform group-hover:translate-x-2">→</div>
                     </div>
                 </div>
 
@@ -181,9 +179,7 @@
                     <div class="aspect-[4/5] overflow-hidden bg-slate-50 relative">
                         <img src="photo/S__38223874.jpg" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110">
                         <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-                            <div class="bg-white text-slate-900 px-8 py-4 rounded-full font-bold shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                                立即查看
-                            </div>
+                            <div class="bg-white text-slate-900 px-8 py-4 rounded-full font-bold shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">立即查看</div>
                         </div>
                     </div>
                     <div class="p-10 text-left flex justify-between items-end">
@@ -191,9 +187,7 @@
                             <h3 class="text-3xl font-black mb-3 text-slate-900">專業聲學配飾</h3>
                             <p class="text-slate-400 font-medium">為 AirPods Pro 量身打造的質感盔甲。</p>
                         </div>
-                        <div class="w-14 h-14 rounded-full border border-slate-100 flex items-center justify-center text-2xl group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 transform group-hover:translate-x-2">
-                            →
-                        </div>
+                        <div class="w-14 h-14 rounded-full border border-slate-100 flex items-center justify-center text-2xl group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 transform group-hover:translate-x-2">→</div>
                     </div>
                 </div>
             </div>
@@ -230,11 +224,10 @@
     </footer>
 
     <script>
-        // 全域變數
         let _supabase;
 
         window.addEventListener('DOMContentLoaded', () => {
-            // 1. 初始化 Supabase (包在 Try Catch 裡確保不崩潰)
+            // 1. 初始化 Supabase
             try {
                 _supabase = supabase.createClient('https://oikubhlwdbxrfhifqusn.supabase.co', 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy');
                 handleAuthUI();
@@ -250,16 +243,11 @@
             }
             requestAnimationFrame(raf);
 
-            // 3. Vercel Analytics
-            if (window.va) { window.va.track('ViewHomePage'); }
-
-            // 4. 其他 UI 初始化
+            // 3. UI 初始化
             checkCartDot();
-
-            // 5. GSAP 動畫核心邏輯
             gsap.registerPlugin(ScrollTrigger);
 
-            // 修正：使用 autoAlpha 確保 visibility 同時切換
+            // 4. Reveal 動畫
             gsap.utils.toArray(".reveal").forEach(el => {
                 gsap.to(el, { 
                     autoAlpha: 1, 
@@ -274,26 +262,28 @@
                 });
             });
 
-            // 導航列變化
+            // 5. 導覽列變化：修正處（滾動後寬度 95% 且維持 50px 圓角）
             ScrollTrigger.create({
                 start: "top -20",
                 onEnter: () => gsap.to(".floating-nav", { 
-                    marginTop: "0", 
-                    width: "100%", 
-                    borderRadius: "0", 
+                    marginTop: "10px", 
+                    width: "95%", 
+                    borderRadius: "50px", 
                     backgroundColor: "white", 
-                    duration: 0.5 
+                    duration: 0.6,
+                    ease: "expo.out"
                 }),
                 onLeaveBack: () => gsap.to(".floating-nav", { 
                     marginTop: "20px", 
                     width: "90%", 
                     borderRadius: "50px", 
                     backgroundColor: "rgba(255,255,255,0.8)", 
-                    duration: 0.5 
+                    duration: 0.6,
+                    ease: "expo.out"
                 })
             });
 
-            // 背景發光與 IG 球移動
+            // 6. 滑鼠交互效應
             const ball = document.getElementById('ig-floating-ball');
             document.addEventListener('mousemove', (e) => {
                 gsap.to("#cursor-glow", { 
@@ -308,7 +298,6 @@
                     const ballX = rect.left + rect.width / 2;
                     const ballY = rect.top + rect.height / 2;
                     const dist = Math.hypot(e.clientX - ballX, e.clientY - ballY);
-                    
                     if (dist < 250) {
                         gsap.to(ball, { x: (e.clientX - ballX) * 0.3, y: (e.clientY - ballY) * 0.3, duration: 0.5 });
                     } else {
@@ -318,7 +307,7 @@
             });
         });
 
-        // 功能函數
+        // 功能函數區
         async function loginWithGoogle() {
             if (!_supabase) return;
             await _supabase.auth.signInWithOAuth({ 
@@ -335,7 +324,6 @@
                 if (session?.user) {
                     const avatar = session.user.user_metadata.avatar_url || 'photo/S__38223874.jpg';
                     const fullName = session.user.user_metadata.full_name || 'User';
-                    
                     authSection.innerHTML = `
                         <div class="relative group">
                             <div class="relative cursor-pointer">

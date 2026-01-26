@@ -115,7 +115,7 @@
                 <p class="text-sm font-bold text-white tracking-wide">使用 Google 帳號結帳</p>
                 <p class="text-[11px] text-slate-400 font-medium">登入後即可享有自動填寫與訂單追蹤</p>
             </div>
-            <button onclick="handleQuickLogin()" class="bg-white text-slate-900 px-6 py-2.5 rounded-full text-[12px] font-black hover:bg-orange-500 hover:text-white transition-all uppercase">Sign In</button>
+            <button onclick="handleQuickLogin()" class="bg-white text-slate-900 px-6 py-2.5 rounded-full text-[12px] font-black hover:bg-orange-500 hover:text-white transition-all uppercase">登入</button>
         </div>
 
         <div id="cart-list" class="space-y-4">
@@ -217,7 +217,7 @@
                         </div>`;
                     document.getElementById('login-alert').classList.add('hidden');
                 } else {
-                    authSection.innerHTML = `<button onclick="handleQuickLogin()" class="text-slate-400 hover:text-slate-900 transition font-bold">Sign In</button>`;
+                    authSection.innerHTML = `<button onclick="handleQuickLogin()" class="text-slate-400 hover:text-slate-900 transition font-bold">登入</button>`;
                     document.getElementById('login-alert').classList.remove('hidden');
                 }
             });
