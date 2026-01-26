@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eriju | 關於我們</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.33/dist/lenis.min.js"></script>
+    
+    <style>
+        :root { 
+            --accent: #1e293b; 
+            --gold: #d4af37;
+            --bg-light: #fdfdfd;
+        }
+        
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+        body { 
+            background-color: var(--bg-light);
+            color: #334155;
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow-x: hidden;
+            letter-spacing: -0.02em;
+        }
+
+        /* 隨滑鼠移動的柔光 */
+        .glow-bg {
+            position: fixed; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.04) 0%, transparent 70%);
+            border-radius: 50%; pointer-events: none; z-index: -1; filter: blur(60px);
+        }
+
+        /* 導覽列 */
+        .floating-nav { 
+            background: rgba(255, 255, 255, 0.8) !important; 
+            backdrop-filter: blur(20px) saturate(160%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+            border-radius: 50px !important; margin-top: 20px;
+            width: 90%; max-width: 1100px; left: 50%; transform: translateX(-50%);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 使用者選單 */
+        .user-menu {
+            opacity: 0; visibility: hidden; transform: scale(0.95) translateY(10px);
+            position: absolute; right: 0; top: 60px; width: 240px;
+            background: white; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1001;
+        }
+        #auth-section:hover .user-menu { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
+
+        .reveal { opacity: 0; transform: translateY(40px); }
+
+        .gold-accent {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            border: 1px solid #e2e8f0; color: #64748b; padding: 4px 16px;
+            border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+        }
+
+        /* 質感卡片 */
+        .value-card {
+            background: #ffffff; border-radius: 40px; padding: 48px;
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.02);
+        }
+        .value-card:hover { 
+            transform: translateY(-12px); 
+            box-shadow: 0 40px 80px rgba(0,0,0,0.06);
+            border-color: rgba(0,0,0,0.08);
+        }
+
+        .ig-ball {
+            position: fixed; bottom: 40px; right: 40px; width: 70px; height: 70px;
+            background: white; border-radius: 50%;
+            display: grid !important; place-items: center !important; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 1000; cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .ig-ball svg { width: 34px; height: 34px; fill: url(#ig-grad-fill); }
+    </style>
+</head>
+<body class="pt-24">
+
+    <div class="glow-bg" id="cursor-glow"></div>
+
+    <a href="https://www.instagram.com/eriju_atelier" target="_blank" class="ig-ball reveal" id="ig-floating-ball">
+        <svg viewBox="0 0 24 24">
+            <defs>
+                <linearGradient id="ig-grad-fill" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#f09433;" />
+                    <stop offset="50%" style="stop-color:#dc2743;" />
+                    <stop offset="100%" style="stop-color:#bc1888;" />
+                </linearGradient>
+            </defs>
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c.796 0 1.441.645 1.441 1.44s-.645 1.44 1.441 1.44c-.795 0-1.439-.645-1.439-1.44s.644-1.44 1.439-1.44z"/></svg>
+    </a>
+
+    <nav class="floating-nav fixed top-0 z-[1000] h-[70px] px-8 flex items-center justify-between">
+        <a href="index.html" class="flex items-center group">
+            <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-all group-hover:rotate-6">
+                <img src="photo/S__38223874.jpg" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <span class="ml-4 text-xl font-black tracking-tighter text-slate-900 uppercase">Eriju</span>
+        </a>
+        
+        <div class="flex items-center gap-8 text-[13px] font-bold tracking-widest uppercase">
+            <a href="catalog.html" class="text-slate-400 hover:text-slate-900 transition">選購</a>
+            <a href="about.html" class="text-slate-900 transition underline decoration-2 underline-offset-8">關於</a>
+            <div id="auth-section" class="relative">
+                <button onclick="loginWithGoogle()" class="text-slate-400 hover:text-slate-900 transition font-bold uppercase tracking-widest">登入</button>
+            </div>
+            <a href="cart.html" class="relative group p-2 transition-transform hover:scale-110">
+                <span class="text-xl">🛒</span>
+                <span id="cart-dot" class="hidden absolute top-0 right-0 w-2.5 h-2.5 bg-slate-900 border-2 border-white rounded-full"></span>
+            </a>
+        </div>
+    </nav>
+
+    <section class="relative pt-32 pb-20 px-6 text-center overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] -z-10 opacity-40"></div>
+        <div class="reveal max-w-4xl mx-auto">
+            <div class="gold-accent mx-auto w-fit mb-8">OUR PHILOSOPHY</div>
+            <h1 class="text-7xl md:text-[130px] font-black text-slate-900 tracking-tighter mb-8 leading-[0.85]">
+                重新定義<br><span class="text-slate-300">日常的重量</span>
+            </h1>
+            <p class="text-slate-400 text-xl md:text-2xl max-w-2xl mx-auto leading-tight font-medium">
+                Eriju 誕生於對純粹美學的執著。我們將功能打磨至極致，在繁雜世界中，為您找到一處質感留白。
+            </p>
+        </div>
+    </section>
+
+    <section class="py-32 bg-white">
+        <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-24 items-center">
+            <div class="reveal order-2 md:order-1">
+                <h2 class="text-5xl font-black text-slate-900 mb-8 tracking-tighter uppercase">始於 2026 / 台灣</h2>
+                <p class="text-slate-500 leading-relaxed mb-6 text-xl">
+                    在快速變遷的時代，我們選擇了一條精確的路。Eriju 專注於高品質生活，從材質的溫潤觸感到光影在表面的流動，每一處細節都經過嚴格校準。
+                </p>
+                <p class="text-slate-400 leading-relaxed mb-8 text-lg">
+                    我們相信，配件不只是附屬品，而是使用者個性的延伸。這就是為什麼我們堅持「減法美學」—— 去掉多餘的裝飾，讓產品的本質與使用者的生活完美共鳴。這並不是為了省成本，而是對設計的最高敬意。
+                </p>
+                <div class="flex gap-16 border-t border-slate-100 pt-10">
+                    <div>
+                        <span class="block text-5xl font-black text-slate-900 tracking-tighter">999+</span>
+                        <span class="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">次細節打樣</span>
+                    </div>
+                    <div>
+                        <span class="block text-5xl font-black text-slate-900 tracking-tighter">100%</span>
+                        <span class="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">原創設計</span>
+                    </div>
+                </div>
+            </div>
+            <div class="reveal order-1 md:order-2">
+                <div class="rounded-[60px] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-all duration-1000 group">
+                    <img src="photo/S__38223874.jpg" alt="About Image" class="w-full h-auto scale-110 group-hover:scale-100 transition-transform duration-1000">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-32 bg-slate-50/50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="reveal text-center mb-24">
+                <h2 class="text-6xl font-black tracking-tighter text-slate-900 uppercase">信念</h2>
+                <div class="w-12 h-1 bg-slate-900 mx-auto mt-6"></div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-10">
+                <div class="reveal value-card">
+                    <div class="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center mb-10 text-xl font-black shadow-lg shadow-slate-200">01</div>
+                    <h3 class="text-2xl font-black mb-6 text-slate-900 tracking-tight">極致純粹<br><span class="text-slate-300 text-sm uppercase tracking-widest">Purity</span></h3>
+                    <p class="text-slate-400 text-lg leading-relaxed font-medium">
+                        去掉多餘線條，只留下最純粹的幾何美感。我們追求的是一種「安靜的設計」，讓產品在使用中自然消失，只留下流暢的體驗。
+                    </p>
+                </div>
+                <div class="reveal value-card" style="transition-delay: 0.1s;">
+                    <div class="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center mb-10 text-xl font-black shadow-lg shadow-slate-200">02</div>
+                    <h3 class="text-2xl font-black mb-6 text-slate-900 tracking-tight">工藝溫度<br><span class="text-slate-300 text-sm uppercase tracking-widest">Craftsmanship</span></h3>
+                    <p class="text-slate-400 text-lg leading-relaxed font-medium">
+                        雖然追求現代化生產的精準，但我們堅持最後一道工序由人工親自檢視與打磨。每一件出廠的產品都代表著對質量的最高敬意。
+                    </p>
+                </div>
+                <div class="reveal value-card" style="transition-delay: 0.2s;">
+                    <div class="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center mb-10 text-xl font-black shadow-lg shadow-slate-200">03</div>
+                    <h3 class="text-2xl font-black mb-6 text-slate-900 tracking-tight">永續思考<br><span class="text-slate-300 text-sm uppercase tracking-widest">Sustainability</span></h3>
+                    <p class="text-slate-400 text-lg leading-relaxed font-medium">
+                        我們拒絕快時尚的消耗。透過打造長壽命的耐看設計與選用高品質耐磨材質，讓每一件 Eriju 都能陪伴您走過數個寒暑假。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-24 text-center border-t border-slate-50">
+    <span class="text-2xl font-black tracking-tighter uppercase mb-6 block text-slate-900">Eriju</span>
+    
+    <div class="max-w-md mx-auto mb-10 px-6">
+        <p class="text-[10px] text-slate-400 leading-loose">
+            本網站為 Eriju 個人創作與技術展示專案。所列商品為測試性販售之原創作品，非公司行號營運。下單前請詳閱專案說明，參與即代表支持個人創作。
+        </p>
+    </div>
+
+    <p class="text-slate-300 text-[11px] tracking-[0.5em] uppercase">© 2026 Eriju Studio. All rights reserved.</p>
+</footer>
+
+    <script>
+        const lenis = new Lenis();
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        const _supabase = supabase.createClient('https://oikubhlwdbxrfhifqusn.supabase.co', 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy');
+
+        async function loginWithGoogle() {
+            await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+        }
+
+        function handleAuthUI() {
+            const authSection = document.getElementById('auth-section');
+            _supabase.auth.onAuthStateChange((event, session) => {
+                if (session?.user) {
+                    const user = session.user;
+                    const avatar = user.user_metadata.avatar_url || 'photo/S__38223874.jpg';
+                    const fullName = user.user_metadata.full_name || 'Premium User';
+
+                    authSection.innerHTML = `
+                        <div class="relative group">
+                            <div class="relative cursor-pointer">
+                                <img src="${avatar}" class="w-9 h-9 rounded-xl ring-4 ring-white shadow-sm transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
+                                <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                            </div>
+                            <div class="user-menu p-3 text-left">
+                                <div class="px-4 py-3 bg-slate-50 rounded-2xl mb-2">
+                                    <p class="text-slate-900 text-[10px] font-black truncate uppercase tracking-widest leading-tight">${fullName}</p>
+                                    <p class="text-slate-400 text-[9px] truncate mt-0.5 font-medium">${user.email}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <a href="orders.html" class="flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-all group/item">
+                                        <span class="text-base group-hover/item:scale-110 transition-transform">📦</span> MY ARCHIVE
+                                    </a>
+                                    <div class="h-[1px] bg-slate-100 my-1 mx-2"></div>
+                                    <button onclick="_supabase.auth.signOut().then(()=>location.reload())" 
+                                            class="w-full flex items-center gap-3 p-3 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all group/logout">
+                                        <span class="text-base group-hover/logout:rotate-12 transition-transform">🚪</span> SIGN OUT
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            });
+        }
+
+        function checkCartDot() {
+            const cart = JSON.parse(localStorage.getItem('ej_cart') || '[]');
+            if (cart.length > 0) document.getElementById('cart-dot')?.classList.remove('hidden');
+        }
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            handleAuthUI();
+            checkCartDot();
+
+            gsap.utils.toArray(".reveal").forEach(el => {
+                gsap.to(el, { opacity: 1, y: 0, duration: 1.5, ease: "expo.out", scrollTrigger: { trigger: el, start: "top 92%" } });
+            });
+
+            ScrollTrigger.create({
+                start: "top -20",
+                onEnter: () => gsap.to(".floating-nav", { marginTop: "0", width: "100%", borderRadius: "0", backgroundColor: "white", duration: 0.5 }),
+                onLeaveBack: () => gsap.to(".floating-nav", { marginTop: "20px", width: "90%", borderRadius: "50px", backgroundColor: "rgba(255,255,255,0.8)", duration: 0.5 })
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                gsap.to("#cursor-glow", { x: e.clientX - 300, y: e.clientY - 300, duration: 2, ease: "power2.out" });
+                const ball = document.getElementById('ig-floating-ball');
+                const rect = ball.getBoundingClientRect();
+                const ballX = rect.left + rect.width / 2;
+                const ballY = rect.top + rect.height / 2;
+                const dist = Math.hypot(e.clientX - ballX, e.clientY - ballY);
+                if (dist < 200) {
+                    gsap.to(ball, { x: (e.clientX - ballX) * 0.3, y: (e.clientY - ballY) * 0.3, duration: 0.5 });
+                } else {
+                    gsap.to(ball, { x: 0, y: 0, duration: 0.5 });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
