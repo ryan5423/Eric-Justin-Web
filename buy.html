@@ -3,117 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>產品詳情 | EriJu</title>
+    <title>產品詳情 | Eriju</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #fff; color: #1d1d1f; padding-top: 60px; }
-        .nav-buy { background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-bottom: 0.5px solid #d2d2d7; }
-        
+        :root { --bg-light: #fdfdfd; }
+        body { 
+            background-color: var(--bg-light); 
+            color: #334155; 
+            font-family: 'Inter', -apple-system, sans-serif;
+            letter-spacing: -0.02em;
+            padding-top: 100px;
+        }
+
+        /* 統一懸浮導覽列 */
+        .floating-nav { 
+            background: rgba(255, 255, 255, 0.8) !important; 
+            backdrop-filter: blur(20px) saturate(160%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+            border-radius: 50px !important; 
+            margin-top: 20px;
+            width: 90%;
+            max-width: 1100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        .user-menu {
+            position: absolute; top: 120%; right: 0;
+            background: white; border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            min-width: 220px; opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s ease;
+            z-index: 100; overflow: hidden;
+        }
+        .group:hover .user-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+
         /* 輪播樣式 */
-        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 28px; background: #f5f5f7; }
+        .slider-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 32px; background: white; border: 1px solid rgba(0,0,0,0.03); }
         .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; }
         .slider-container::-webkit-scrollbar { display: none; }
-        .slide { flex: 0 0 100%; scroll-snap-align: start; display: flex; justify-content: center; align-items: center; min-height: 45vh; }
-        .product-img { width: 100%; height: auto; max-height: 60vh; object-fit: contain; }
+        .slide { flex: 0 0 100%; scroll-snap-align: start; display: flex; justify-content: center; align-items: center; min-height: 50vh; padding: 40px; }
+        .product-img { width: 100%; height: auto; max-height: 55vh; object-fit: contain; }
 
-        /* 滑動按鈕 */
         .nav-arrow {
             position: absolute; top: 50%; transform: translateY(-50%);
-            width: 40px; height: 40px; background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 20; border: 1px solid #d2d2d7;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: 0.2s;
-            color: #0071e3; font-weight: bold;
+            width: 44px; height: 44px; background: white;
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 20; border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: 0.3s;
+            color: #0f172a; font-weight: bold;
         }
-        .nav-arrow:hover { scale: 1.1; background: white; }
-        .nav-arrow.prev { left: 16px; }
-        .nav-arrow.next { right: 16px; }
+        .nav-arrow:hover { scale: 1.05; background: #f8fafc; }
+        .nav-arrow.prev { left: 20px; }
+        .nav-arrow.next { right: 20px; }
 
-        .btn-apple-blue { background-color: #0071e3; color: white; transition: all 0.3s; }
-        .btn-apple-blue:hover { background-color: #0077ed; }
+        .btn-buy { background: #0f172a; color: white; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .btn-buy:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
 
-        /* 規格選擇面板 (Drawer) */
+        /* 規格面板 */
         #spec-panel {
             position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: white; border-radius: 30px 30px 0 0;
-            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 100; box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
-            padding-bottom: env(safe-area-inset-bottom);
+            background: white; border-radius: 40px 40px 0 0;
+            transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1100; box-shadow: 0 -20px 60px rgba(0,0,0,0.15);
         }
         #spec-panel.active { transform: translateY(0); }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 90; }
+        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; transition: 0.4s; z-index: 1050; }
         .overlay.active { opacity: 1; visibility: visible; }
 
-        .dot-indicator { width: 6px; height: 6px; background: #d2d2d7; border-radius: 50%; margin: 0 3px; transition: 0.3s; }
-        .dot-indicator.active { background: #0071e3; width: 16px; border-radius: 3px; }
+        .dot-indicator { width: 6px; height: 6px; background: #e2e8f0; border-radius: 50%; margin: 0 4px; transition: 0.3s; }
+        .dot-indicator.active { background: #0f172a; width: 20px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <nav class="nav-buy fixed top-0 w-full z-50 px-6 py-3 flex justify-between items-center h-[52px]">
-        <a href="index.html" class="font-bold text-sm text-black tracking-tight">Eric Justin</a>
-        <div class="flex items-center gap-4">
-            <a href="catalog.html" class="text-xs text-gray-500 hover:text-[#0071e3]">返回目錄</a>
-            <a href="cart.html" class="relative">🛒<span id="cart-dot" class="hidden absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span></a>
+    <nav class="floating-nav fixed top-0 h-[70px] px-8 flex items-center justify-between">
+        <a href="index.html" class="flex items-center group">
+            <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-all group-hover:rotate-6">
+                <img src="photo/S__38223874.jpg" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <span class="ml-4 text-xl font-black tracking-tighter text-slate-900 uppercase">Eriju</span>
+        </a>
+        <div class="flex items-center gap-6 text-[13px] font-bold tracking-widest uppercase">
+            <a href="catalog.html" class="text-slate-400 hover:text-slate-900 transition underline-offset-8">選購</a>
+            <div id="auth-section" class="relative">
+                <button onclick="handleQuickLogin()" class="text-slate-400 hover:text-slate-900 transition">登入</button>
+            </div>
+            <a href="cart.html" class="relative text-slate-400 hover:text-slate-900 transition">
+                🛒
+                <span id="cart-dot" class="hidden absolute -top-1 -right-2 w-2 h-2 bg-orange-500 rounded-full"></span>
+            </a>
         </div>
     </nav>
 
-    <div id="loading" class="h-[80vh] flex items-center justify-center text-gray-400">正在連接雲端設計...</div>
+    <div id="loading" class="h-[70vh] flex items-center justify-center text-slate-300 font-bold tracking-widest animate-pulse uppercase">
+        Connecting to Cloud...
+    </div>
 
-    <main id="content" class="max-w-screen-xl mx-auto px-6 md:grid md:grid-cols-2 md:gap-16 py-10 hidden">
+    <main id="content" class="max-w-6xl mx-auto px-6 md:grid md:grid-cols-2 md:gap-20 py-10 hidden">
         <div class="image-box relative">
             <div class="slider-wrapper">
                 <button id="prev-btn" class="nav-arrow prev" onclick="moveSlide(-1)">❮</button>
                 <button id="next-btn" class="nav-arrow next" onclick="moveSlide(1)">❯</button>
                 <div class="slider-container" id="slider"></div>
             </div>
-            <div class="flex justify-center mt-6" id="dots-container"></div>
+            <div class="flex justify-center mt-8" id="dots-container"></div>
         </div>
 
-        <div class="space-y-8">
+        <div class="flex flex-col justify-center space-y-10">
             <header>
-                <span id="p-tag" class="text-[#0071e3] font-bold text-xs tracking-widest uppercase"></span>
-                <h1 id="p-name" class="text-4xl font-bold mt-2 tracking-tight"></h1>
-                <p id="p-price" class="text-2xl text-gray-500 font-medium mt-4"></p>
-                <p id="p-desc" class="text-gray-500 mt-6 leading-relaxed text-lg font-light"></p>
+                <span id="p-tag" class="text-orange-500 font-black text-[11px] tracking-[0.3em] uppercase block mb-3"></span>
+                <h1 id="p-name" class="text-5xl font-black tracking-tighter text-slate-900 leading-tight"></h1>
+                <p id="p-price" class="text-3xl text-slate-400 font-bold tracking-tighter mt-4"></p>
+                <p id="p-desc" class="text-slate-500 mt-8 leading-relaxed text-lg font-medium"></p>
             </header>
 
-            <div class="p-6 bg-[#f5f5f7] rounded-2xl">
-                <p id="p-detail-title" class="font-bold text-sm mb-2 text-[#1d1d1f]">工法說明</p>
-                <p id="p-detail" class="text-sm text-gray-500 leading-relaxed font-light whitespace-pre-line"></p>
+            <div class="p-8 bg-slate-50 rounded-[32px] border border-slate-100">
+                <p id="p-detail-title" class="font-black text-xs uppercase tracking-widest mb-4 text-slate-900">工法說明</p>
+                <p id="p-detail" class="text-sm text-slate-500 leading-relaxed font-medium whitespace-pre-line"></p>
             </div>
 
-            <button onclick="toggleSpec(true)" class="btn-apple-blue w-full py-4 rounded-2xl font-bold text-lg shadow-lg transform active:scale-[0.98]">
-                加入購物袋
+            <button onclick="toggleSpec(true)" class="btn-buy w-full py-6 rounded-[24px] font-black text-lg uppercase tracking-widest shadow-xl">
+                Add to Bag
             </button>
         </div>
     </main>
 
     <div class="overlay" onclick="toggleSpec(false)"></div>
+    
     <div id="spec-panel">
-        <div class="max-w-md mx-auto p-8">
+        <div class="max-w-md mx-auto p-10">
             <div class="flex justify-between items-center mb-8">
-                <h3 class="text-xl font-bold">確認購買數量</h3>
-                <button onclick="toggleSpec(false)" class="text-gray-300">✕</button>
+                <h3 class="text-2xl font-black tracking-tight text-slate-900">確認預購項目。</h3>
+                <button onclick="toggleSpec(false)" class="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-full text-slate-400 hover:text-slate-900 transition">✕</button>
             </div>
-            
-            <div class="flex items-center justify-between mb-8 p-4 bg-gray-50 rounded-2xl">
-                <span class="text-gray-600">數量</span>
-                <div class="flex items-center gap-5">
-                    <button onclick="changeQty(-1)" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center">-</button>
-                    <span id="buy-qty" class="text-xl font-bold w-6 text-center">1</span>
-                    <button onclick="changeQty(1)" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center">+</button>
+
+            <div class="flex items-center justify-between mb-6 p-6 bg-slate-50 rounded-[24px]">
+                <span class="font-bold text-slate-400 uppercase text-xs tracking-widest">Quantity</span>
+                <div class="flex items-center gap-6">
+                    <button onclick="changeQty(-1)" class="w-10 h-10 rounded-xl border-2 border-slate-200 flex items-center justify-center font-black text-slate-900 hover:border-slate-900 transition">-</button>
+                    <span id="buy-qty" class="text-2xl font-black w-8 text-center text-slate-900">1</span>
+                    <button onclick="changeQty(1)" class="w-10 h-10 rounded-xl border-2 border-slate-200 flex items-center justify-center font-black text-slate-900 hover:border-slate-900 transition">+</button>
                 </div>
             </div>
 
-            <div class="flex justify-between items-center mb-8 px-2">
-                <span class="text-gray-400">總額</span>
-                <span id="total-price" class="text-2xl font-bold text-[#0071e3]">NT$ 0</span>
+            <div class="mb-8 p-5 bg-orange-50/50 rounded-[24px] border border-orange-100">
+                <label class="flex items-start gap-3 cursor-pointer group">
+                    <input type="checkbox" id="terms-checkbox" class="mt-1 w-5 h-5 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                    <div class="text-[11px] text-slate-500 leading-relaxed">
+                        <span class="font-bold text-slate-900 block mb-1">© Eriju — 個人創作與技術展示專案</span>
+                        我已了解此為個人創作專案之測試性販售，非公司行號。下單即表示理解本專案仍在早期階段，出貨時間與細節可能依實際狀況調整。
+                    </div>
+                </label>
             </div>
 
-            <button onclick="confirmAddToCart()" class="btn-apple-blue w-full py-4 rounded-full font-bold shadow-xl">
-                確定加入
+            <div class="flex justify-between items-end mb-10 px-2">
+                <span class="text-slate-400 font-bold uppercase text-[11px] tracking-widest pb-1">Subtotal</span>
+                <span id="total-price" class="text-3xl font-black text-slate-900 tracking-tighter">NT$ 0</span>
+            </div>
+
+            <button id="confirm-btn" onclick="confirmAddToCart()" disabled class="w-full py-5 rounded-[22px] font-black uppercase tracking-widest shadow-2xl transition-all duration-300 bg-slate-200 text-white cursor-not-allowed">
+                Confirm & Add
             </button>
         </div>
     </div>
@@ -124,42 +178,83 @@
         let currentProduct = null;
         let qty = 1;
 
-        async function init() {
-            if (!productId) return;
-            const { data: p, error } = await _supabase.from('products').select('*').eq('id', productId).single();
-            if (error || !p) return;
-            currentProduct = p;
-
-            // 填入基本資訊
-            document.getElementById('p-name').innerText = p.name;
-            document.getElementById('p-price').innerText = `NT$ ${p.price.toLocaleString()}`;
-            document.getElementById('total-price').innerText = `NT$ ${p.price.toLocaleString()}`;
-            document.getElementById('p-desc').innerText = p.description || '精心手工打造。';
-            document.getElementById('p-tag').innerText = p.tag || 'ERIC JUSTIN';
-            
-            // 修正 2 邏輯: 從資料庫讀取工法標題與內文
-            document.getElementById('p-detail-title').innerText = p.detail_title || '雲端作品介紹';
-            document.getElementById('p-detail').innerText = p.detail || '每一件作品皆由 Eric Justin 親自操刀。';
-
-            // 處理圖片
-            const imgList = [p.image_url, p.image_url2, p.image_url3].filter(u => u && u !== "null" && u !== "");
-            if(imgList.length === 0) imgList.push('photo/S__38223874.jpg');
-            
-            const slider = document.getElementById('slider');
-            const dots = document.getElementById('dots-container');
-            imgList.forEach((url, i) => {
-                slider.innerHTML += `<div class="slide"><img src="${url}" class="product-img"></div>`;
-                dots.innerHTML += `<div class="dot-indicator ${i===0?'active':''}"></div>`;
+        function handleAuthUI() {
+            const authSection = document.getElementById('auth-section');
+            _supabase.auth.onAuthStateChange((event, session) => {
+                if (session?.user) {
+                    const user = session.user;
+                    const avatar = user.user_metadata.avatar_url || 'photo/S__38223874.jpg';
+                    authSection.innerHTML = `
+                        <div class="relative group">
+                            <img src="${avatar}" class="w-9 h-9 rounded-xl ring-4 ring-slate-50 cursor-pointer shadow-sm hover:scale-105 transition-transform">
+                            <div class="user-menu p-3 text-left">
+                                <div class="p-4 bg-slate-50 rounded-2xl mb-2">
+                                    <p class="text-slate-900 text-xs font-black truncate">${user.user_metadata.full_name || 'User'}</p>
+                                    <p class="text-slate-400 text-[10px] truncate">${user.email}</p>
+                                </div>
+                                <a href="orders.html" class="block p-3 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition">Order Records</a>
+                                <button onclick="logout()" class="w-full text-left p-3 text-xs font-bold text-red-400 hover:bg-red-50 rounded-xl transition">Sign Out</button>
+                            </div>
+                        </div>
+                    `;
+                }
             });
+        }
 
-            if(imgList.length <= 1) {
-                document.getElementById('prev-btn').classList.add('hidden');
-                document.getElementById('next-btn').classList.add('hidden');
+        async function logout() { await _supabase.auth.signOut(); location.reload(); }
+        async function handleQuickLogin() { await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } }); }
+
+        async function init() {
+            handleAuthUI();
+            if (!productId) {
+                document.getElementById('loading').innerText = "ERROR: NO PRODUCT ID FOUND";
+                return;
             }
 
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('content').classList.remove('hidden');
-            checkCartDot();
+            try {
+                const { data: allProducts, error } = await _supabase.from('products').select('*');
+                if (error) throw error;
+                const p = allProducts.find(item => String(item.id) === String(productId));
+
+                if (!p) {
+                    document.getElementById('loading').innerText = "找不到編號為 " + productId + " 的商品";
+                    return;
+                }
+
+                currentProduct = p;
+                document.getElementById('p-name').innerText = p.name;
+                document.getElementById('p-price').innerText = `NT$ ${p.price.toLocaleString()}`;
+                document.getElementById('total-price').innerText = `NT$ ${p.price.toLocaleString()}`;
+                document.getElementById('p-desc').innerText = p.description || '精心手工打造。';
+                document.getElementById('p-tag').innerText = p.tag || 'ERIC JUSTIN';
+                document.getElementById('p-detail-title').innerText = p.detail_title || '雲端作品介紹';
+                document.getElementById('p-detail').innerText = p.detail || '每一件作品皆由 Eric Justin 親自操刀。';
+
+                const imgList = [p.image_url, p.image_url2, p.image_url3].filter(u => u && u !== "null" && u !== "");
+                if(imgList.length === 0) imgList.push('photo/S__38223874.jpg');
+                
+                const slider = document.getElementById('slider');
+                const dots = document.getElementById('dots-container');
+                slider.innerHTML = ''; dots.innerHTML = '';
+
+                imgList.forEach((url, i) => {
+                    slider.innerHTML += `<div class="slide"><img src="${url}" class="product-img"></div>`;
+                    dots.innerHTML += `<div class="dot-indicator ${i===0?'active':''}"></div>`;
+                });
+
+                if(imgList.length <= 1) {
+                    document.getElementById('prev-btn').classList.add('hidden');
+                    document.getElementById('next-btn').classList.add('hidden');
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').classList.remove('hidden');
+                checkCartDot();
+
+            } catch (err) {
+                console.error("抓取失敗:", err);
+                document.getElementById('loading').innerText = "DATABASE CONNECTION FAILED: " + err.message;
+            }
         }
 
         function moveSlide(dir) {
@@ -168,9 +263,36 @@
         }
 
         function toggleSpec(show) {
-            document.getElementById('spec-panel').classList.toggle('active', show);
-            document.querySelector('.overlay').classList.toggle('active', show);
+            const panel = document.getElementById('spec-panel');
+            const overlay = document.querySelector('.overlay');
+            const checkbox = document.getElementById('terms-checkbox');
+            const btn = document.getElementById('confirm-btn');
+
+            if (show) {
+                // 開放面板時重置勾選
+                checkbox.checked = false;
+                btn.disabled = true;
+                btn.classList.add('bg-slate-200', 'text-white', 'cursor-not-allowed');
+                btn.classList.remove('bg-slate-900');
+            }
+
+            panel.classList.toggle('active', show);
+            overlay.classList.toggle('active', show);
         }
+
+        // 監聽勾選框狀態變動
+        document.getElementById('terms-checkbox').addEventListener('change', (e) => {
+            const btn = document.getElementById('confirm-btn');
+            if (e.target.checked) {
+                btn.disabled = false;
+                btn.classList.remove('bg-slate-200', 'cursor-not-allowed');
+                btn.classList.add('bg-slate-900');
+            } else {
+                btn.disabled = true;
+                btn.classList.add('bg-slate-200', 'cursor-not-allowed');
+                btn.classList.remove('bg-slate-900');
+            }
+        });
 
         function changeQty(dir) {
             qty = Math.max(1, qty + dir);
@@ -183,7 +305,6 @@
             const idx = cart.findIndex(item => item.id === currentProduct.id);
             if (idx > -1) cart[idx].qty += qty;
             else cart.push({ id: currentProduct.id, name: currentProduct.name, price: currentProduct.price, image: currentProduct.image_url, qty: qty });
-            
             localStorage.setItem('ej_cart', JSON.stringify(cart));
             window.location.href = "cart.html";
         }

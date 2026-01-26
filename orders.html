@@ -3,206 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>訂單紀錄 | Eric Justin</title>
+    <title>訂單管理 | Eriju Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.33/dist/lenis.min.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; background: #f5f5f7; color: #1d1d1f; -webkit-font-smoothing: antialiased; }
-        .glass-nav { background: rgba(255,255,255,0.7); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 0.5px solid rgba(0,0,0,0.1); z-index: 1000; }
-        .tab-btn { position: relative; padding: 12px 4px; font-size: 15px; font-weight: 600; color: #86868b; transition: 0.3s; }
-        .tab-btn.active { color: #0071e3; }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: #0071e3; border-radius: 2px; }
-        .order-card { background: #ffffff; border-radius: 24px; border: 1px solid rgba(0,0,0,0.05); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; margin-bottom: 16px; cursor: pointer; }
-        .order-card.active { border-color: #0071e3; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .detail-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; opacity: 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        
+        :root { 
+            --accent: #0f172a; 
+            --bg-light: #fdfdfd;
+        }
+
+        body { 
+            background-color: var(--bg-light);
+            color: #334155;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.01em;
+        }
+
+        /* 頂級導覽列 - 保持全站統一 */
+        .floating-nav { 
+            background: rgba(255, 255, 255, 0.8) !important; 
+            backdrop-filter: blur(20px) saturate(160%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+            border-radius: 50px !important; margin-top: 20px;
+            width: 90%; max-width: 1100px; left: 50%; transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        /* 使用者選單樣式同步 */
+        .user-menu {
+            opacity: 0; visibility: hidden; transform: scale(0.95) translateY(10px);
+            position: absolute; right: 0; top: 60px; width: 240px;
+            background: white; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1001;
+        }
+        #auth-section:hover .user-menu { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
+
+        /* 奢華感標籤切換 */
+        .tab-group { background: #f1f5f9; padding: 4px; border-radius: 16px; display: inline-flex; }
+        .tab-btn { 
+            padding: 8px 24px; font-size: 11px; font-weight: 900; color: #94a3b8; 
+            transition: all 0.4s; border-radius: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+        }
+        .tab-btn.active { background: white; color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+        /* 訂單卡片設計 - 職人美學 */
+        .order-card { 
+            background: #ffffff; border-radius: 32px; border: 1px solid rgba(0,0,0,0.02);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.02);
+        }
+        .order-card:hover { border-color: rgba(0,0,0,0.08); transform: translateY(-2px); box-shadow: 0 20px 40px rgba(0,0,0,0.04); }
+        .order-card.active { border-color: #0f172a; }
+
+        .detail-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; opacity: 0; }
         .order-card.active .detail-wrapper { grid-template-rows: 1fr; opacity: 1; }
         .detail-content { overflow: hidden; }
-        .badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px; }
-        .badge-pending { background: #f2f2f7; color: #8e8e93; }
-        .badge-processing { background: #e5f1ff; color: #0071e3; }
-        .badge-delivered { background: #eafaf1; color: #34c759; }
-        .badge-completed { background: #f2f2f7; color: #1d1d1f; opacity: 0.6; }
-        .apple-btn { background: #0071e3; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,113,227,0.3); transition: 0.2s; width: 100%; }
-        .apple-btn:active { transform: scale(0.98); opacity: 0.9; }
-        .finishing { transform: scale(0.95); opacity: 0.5; pointer-events: none; }
+
+        /* 狀態 Badge */
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .status-text { font-size: 10px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+
+        /* 全寬結案按鈕 */
+        .action-btn { 
+            background: #0f172a; color: white; padding: 16px; border-radius: 20px; 
+            font-size: 11px; font-weight: 900; letter-spacing: 0.2em; width: 100%;
+            transition: all 0.3s;
+        }
+        .action-btn:hover { background: #334155; letter-spacing: 0.25em; }
+        
+        .finishing { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
     </style>
 </head>
-<body class="pb-20">
+<body class="pt-32 pb-20">
 
-    <nav class="glass-nav fixed top-0 w-full h-[52px] flex items-center px-6">
-        <div class="max-w-screen-xl mx-auto w-full flex justify-between items-center">
-            <a href="index.html" class="font-bold text-sm tracking-tight hover:opacity-70 transition text-black">Eric Justin</a>
-            <div class="flex items-center gap-4">
-                <span id="user-email-display" class="text-[11px] text-gray-400 hidden md:block italic">載入中...</span>
-                <a href="catalog.html" class="text-xs text-blue-600 font-semibold hover:underline">繼續選購</a>
+    <nav class="floating-nav fixed top-0 h-[70px] px-8 flex items-center justify-between">
+        <a href="index.html" class="flex items-center group">
+            <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-all group-hover:rotate-6">
+                <img src="photo/S__38223874.jpg" alt="Logo" class="w-full h-full object-cover">
             </div>
+            <span class="ml-4 text-xl font-black tracking-tighter text-slate-900 uppercase">Eriju</span>
+        </a>
+        
+        <div class="flex items-center gap-8 text-[13px] font-bold tracking-widest uppercase">
+            <a href="catalog.html" class="text-slate-400 hover:text-slate-900 transition">Catalog</a>
+            <a href="about.html" class="text-slate-400 hover:text-slate-900 transition">About</a>
+            <div id="auth-section" class="relative"></div>
+            <a href="cart.html" class="relative group p-2">
+                <span class="text-xl">🛒</span>
+                <span id="cart-dot" class="hidden absolute top-0 right-0 w-2.5 h-2.5 bg-slate-900 border-2 border-white rounded-full"></span>
+            </a>
         </div>
     </nav>
 
-    <main class="max-w-2xl mx-auto pt-24 px-6">
-        <header class="mb-8">
-            <h1 class="text-3xl font-extrabold tracking-tight mb-6 text-gray-900">訂單中心</h1>
-            <div class="flex gap-8 border-b border-gray-100 mb-8">
-                <button onclick="switchTab('active')" id="tab-active" class="tab-btn active">
-                    進行中 <span id="count-active" class="ml-1 opacity-50 text-xs"></span>
-                </button>
-                <button onclick="switchTab('history')" id="tab-history" class="tab-btn">
-                    歷史紀錄 <span id="count-history" class="ml-1 opacity-50 text-xs"></span>
-                </button>
+    <main class="max-w-3xl mx-auto px-6">
+        <div class="mb-16">
+            <p class="text-[10px] font-black tracking-[0.4em] text-slate-300 uppercase mb-4">Management</p>
+            <div class="flex items-end justify-between">
+                <h1 class="text-5xl font-black tracking-tighter text-slate-900 uppercase">My Archive</h1>
+                <div class="tab-group">
+                    <button onclick="switchTab('active')" id="tab-active" class="tab-btn active">Active</button>
+                    <button onclick="switchTab('history')" id="tab-history" class="tab-btn">History</button>
+                </div>
             </div>
-        </header>
+        </div>
 
-        <div id="orders-container" class="space-y-4">
+        <div id="orders-container" class="space-y-6">
             <div class="animate-pulse space-y-4">
-                <div class="h-24 bg-white rounded-[24px]"></div>
-                <div class="h-24 bg-white rounded-[24px]"></div>
+                <div class="h-32 bg-white rounded-[32px]"></div>
+                <div class="h-32 bg-white rounded-[32px]"></div>
             </div>
         </div>
     </main>
 
     <script>
         const _supabase = supabase.createClient('https://oikubhlwdbxrfhifqusn.supabase.co', 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy');
-        
         let allOrders = [];
         let currentView = 'active';
 
+        const lenis = new Lenis();
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+
         _supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
-                document.getElementById('user-email-display').innerText = session.user.email;
-                document.getElementById('user-email-display').classList.remove('hidden');
+                handleAuthUI(session);
                 fetchData();
+                checkCartDot();
             } else {
-                location.href = 'index.html';
+                window.location.href = 'index.html';
             }
         });
 
-        async function fetchData() {
-            const { data, error } = await _supabase
-                .from('orders')
-                .select('*')
-                .order('created_at', { ascending: false });
+        function handleAuthUI(session) {
+            const authSection = document.getElementById('auth-section');
+            const avatar = session.user.user_metadata.avatar_url || 'photo/S__38223874.jpg';
+            authSection.innerHTML = `
+                <div class="relative group">
+                    <div class="relative cursor-pointer">
+                        <img src="${avatar}" class="w-9 h-9 rounded-xl ring-4 ring-white shadow-sm transition-all group-hover:rotate-3">
+                        <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
+                    <div class="user-menu p-3">
+                        <div class="px-4 py-3 bg-slate-50 rounded-2xl mb-2">
+                            <p class="text-slate-900 text-[10px] font-black uppercase tracking-widest">${session.user.user_metadata.full_name || 'Member'}</p>
+                            <p class="text-slate-400 text-[9px] truncate">${session.user.email}</p>
+                        </div>
+                        <a href="catalog.html" class="flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-all">✨ NEW COLLECTION</a>
+                        <button onclick="_supabase.auth.signOut().then(()=>location.reload())" class="w-full text-left flex items-center gap-3 p-3 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all">🚪 SIGN OUT</button>
+                    </div>
+                </div>`;
+        }
 
-            if (!error) {
-                allOrders = data;
-                render();
-            } else {
-                document.getElementById('orders-container').innerHTML = `<p class="text-center text-red-400">無法載入資料</p>`;
-            }
+        async function fetchData() {
+            const { data, error } = await _supabase.from('orders').select('*').order('created_at', { ascending: false });
+            if (!error) { allOrders = data; render(); }
         }
 
         function switchTab(view) {
             currentView = view;
-            document.getElementById('tab-active').className = view === 'active' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('tab-history').className = view === 'history' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-active').classList.toggle('active', view === 'active');
+            document.getElementById('tab-history').classList.toggle('active', view === 'history');
             render();
         }
 
         function render() {
             const container = document.getElementById('orders-container');
-            const filtered = allOrders.filter(o => 
-                currentView === 'active' ? o.status !== 'completed' : o.status === 'completed'
-            );
-
-            document.getElementById('count-active').innerText = allOrders.filter(o => o.status !== 'completed').length;
-            document.getElementById('count-history').innerText = allOrders.filter(o => o.status === 'completed').length;
+            const filtered = allOrders.filter(o => currentView === 'active' ? o.status !== 'completed' : o.status === 'completed');
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="py-20 text-center text-gray-400 font-medium">目前沒有${currentView === 'active' ? '進行中' : '歷史'}的訂單</div>`;
+                container.innerHTML = `<div class="py-24 text-center text-slate-300 font-bold uppercase tracking-[0.3em] text-[10px]">Empty Archive</div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(order => {
-                // 【關鍵修正：動態抓取該訂單內第一件商品的圖片】
                 const items = order.items || [];
                 const firstItem = items[0] || {};
-                const displayImage = firstItem.image || 'photo/S__38223874.jpg'; // 若 JSON 內無圖則用預設
-                const displayName = firstItem.name || '精選作品';
+                const statusInfo = getStatusStyle(order.status);
 
                 return `
                 <div class="order-card" id="card-${order.id}" onclick="this.classList.toggle('active')">
-                    <div class="p-6 flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <img src="${displayImage}" 
-                                 onerror="this.src='photo/S__38223874.jpg'"
-                                 class="w-14 h-14 object-cover rounded-xl shadow-sm bg-gray-50">
-                            <div class="text-left">
-                                <h3 class="font-bold text-gray-900">${displayName} ${items.length > 1 ? '等' : ''}</h3>
-                                <p class="text-[11px] text-gray-400 font-mono tracking-tighter">${new Date(order.created_at).toLocaleString()}</p>
+                    <div class="p-10 flex items-center justify-between cursor-pointer">
+                        <div class="flex items-center gap-8">
+                            <div class="relative">
+                                <img src="${firstItem.image}" onerror="this.src='photo/S__38223874.jpg'" class="w-20 h-20 object-cover rounded-[24px] shadow-sm">
+                                ${items.length > 1 ? `<div class="absolute -top-3 -right-3 bg-white text-slate-900 text-[10px] w-7 h-7 flex items-center justify-center rounded-full border border-slate-100 font-black shadow-sm">+${items.length-1}</div>` : ''}
+                            </div>
+                            <div>
+                                <h3 class="font-black text-slate-900 text-xl tracking-tighter mb-1">${firstItem.name || 'Works'}</h3>
+                                <div class="flex items-center">
+                                    <span class="status-dot ${statusInfo.bg}"></span>
+                                    <span class="status-text ${statusInfo.text}">${statusInfo.label}</span>
+                                    <span class="mx-3 w-[1px] h-3 bg-slate-200"></span>
+                                    <span class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">${new Date(order.created_at).toLocaleDateString()}</span>
+                                </div>
                             </div>
                         </div>
                         <div class="text-right">
-                            <p class="font-black mb-1">NT$ ${order.total_amount.toLocaleString()}</p>
-                            <span class="badge badge-${order.status}">${translateStatus(order.status)}</span>
+                            <p class="font-black text-slate-900 text-2xl tracking-tighter">NT$ ${order.total_amount.toLocaleString()}</p>
+                            <p class="text-[9px] font-bold text-slate-300 uppercase mt-1 tracking-widest">Order Summary</p>
                         </div>
                     </div>
                     
                     <div class="detail-wrapper">
-                        <div class="detail-content px-6 pb-6">
-                            <div class="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-100 text-xs space-y-1 text-gray-600">
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">收件資訊</p>
-                                <p><span class="font-bold text-gray-900">${order.user_name || '未提供'}</span> · ${order.user_phone || '未提供'}</p>
-                                <p class="leading-relaxed">${order.shipping_address || '未提供地址'}</p>
-                            </div>
-
-                            <div class="bg-gray-50 rounded-2xl p-4 text-xs space-y-2 border border-gray-100">
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">購物明細</p>
-                                ${items.map(i => `
-                                    <div class="flex justify-between items-center py-1">
-                                        <div class="flex items-center gap-2">
-                                            <img src="${i.image}" class="w-6 h-6 rounded object-cover border border-gray-200" onerror="this.src='photo/S__38223874.jpg'">
-                                            <span class="text-gray-600">${i.name} x${i.qty}</span>
-                                        </div>
-                                        <span class="font-medium text-gray-900">NT$ ${(i.price * i.qty).toLocaleString()}</span>
+                        <div class="detail-content px-10 pb-10">
+                            <div class="h-[1px] bg-slate-50 w-full mb-8"></div>
+                            <div class="grid md:grid-cols-2 gap-12 mb-10">
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Destination</p>
+                                    <p class="text-sm font-black text-slate-900">${order.user_name}</p>
+                                    <p class="text-xs text-slate-500 mt-1">${order.user_phone}</p>
+                                    <p class="text-xs text-slate-400 mt-3 leading-relaxed">${order.shipping_address}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Manifest</p>
+                                    <div class="space-y-3">
+                                        ${items.map(i => `
+                                            <div class="flex justify-between text-xs font-bold">
+                                                <span class="text-slate-500">${i.name} <span class="text-slate-300 font-medium">× ${i.qty}</span></span>
+                                                <span class="text-slate-900">NT$ ${(i.price * i.qty).toLocaleString()}</span>
+                                            </div>
+                                        `).join('')}
                                     </div>
-                                `).join('')}
-                                <div class="border-t pt-3 mt-2">
-                                    ${renderAction(order)}
                                 </div>
                             </div>
+                            ${renderAction(order)}
                         </div>
                     </div>
                 </div>`;
             }).join('');
         }
 
+        function getStatusStyle(s) {
+            const styles = {
+                'pending': { label: 'In Queue', bg: 'bg-amber-400', text: 'text-amber-500' },
+                'processing': { label: 'Crafting', bg: 'bg-blue-500', text: 'text-blue-600' },
+                'delivered': { label: 'In Transit', bg: 'bg-green-500', text: 'text-green-600' },
+                'completed': { label: 'Archived', bg: 'bg-slate-300', text: 'text-slate-400' }
+            };
+            return styles[s] || { label: s, bg: 'bg-slate-200', text: 'text-slate-400' };
+        }
+
         function renderAction(order) {
-            // 只有出貨後（delivered）才讓客戶結案，防止客戶誤點
             if (order.status === 'delivered') {
-                return `<button onclick="event.stopPropagation(); finishOrder('${order.id}')" class="apple-btn">確認收貨並結案</button>`;
+                return `<button onclick="event.stopPropagation(); finishOrder('${order.id}')" class="action-btn">CONFIRM DELIVERY & ARCHIVE</button>`;
             }
             if (order.status === 'completed') {
-                return `<p class="text-center text-gray-400 text-[11px] font-medium">✅ 此訂單已完成結案</p>`;
+                return `<p class="text-center text-slate-300 text-[10px] font-black tracking-[0.3em] uppercase py-4">This order has been successfully archived</p>`;
             }
-            return `<p class="text-center text-blue-600 text-[11px] font-bold tracking-wide italic">⏳ 職人正在處理中：${translateStatus(order.status)}</p>`;
+            return `<div class="text-center py-6 bg-slate-50 rounded-[24px] border border-dashed border-slate-200">
+                        <p class="text-slate-400 text-[9px] font-black tracking-[0.4em] uppercase">Artisan is preparing your package</p>
+                    </div>`;
         }
 
         async function finishOrder(id) {
-            if (!confirm('確認收到商品了嗎？結案後訂單將移至歷史紀錄。')) return;
-            
+            if (!confirm('確認完成此訂單並移至存檔嗎？')) return;
             const card = document.getElementById(`card-${id}`);
             card.classList.add('finishing');
-
             const { error } = await _supabase.from('orders').update({ status: 'completed' }).eq('id', id);
-            
             if (!error) {
-                // 通知 Edge Function 發送結案通知到 Discord
-                await _supabase.functions.invoke('notify-discord', {
-                    body: { order_id: id } 
-                });
-
-                setTimeout(() => {
-                    fetchData();
-                    alert('感謝您的支持！訂單已圓滿結案。');
-                }, 400);
+                await _supabase.functions.invoke('notify-discord', { body: { order_id: id } }).catch(()=>{});
+                setTimeout(() => fetchData(), 400);
             } else {
-                alert('更新失敗：' + error.message);
                 card.classList.remove('finishing');
             }
         }
 
-        function translateStatus(s) {
-            const m = { 'pending': '準備中', 'processing': '製作中', 'delivered': '已出貨', 'completed': '已完成' };
-            return m[s] || s;
+        function checkCartDot() {
+            const cart = JSON.parse(localStorage.getItem('ej_cart') || '[]');
+            if (cart.length > 0) document.getElementById('cart-dot')?.classList.remove('hidden');
         }
     </script>
 </body>

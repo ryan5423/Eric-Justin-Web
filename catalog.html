@@ -3,113 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>所有商品 | EriJu</title>
+    <title>Eriju | 所有商品</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.33/dist/lenis.min.js"></script>
+    
     <style>
-        body { font-family: -apple-system, sans-serif; background: #fff; color: #1d1d1f; padding-top: 80px; }
-        .nav-glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid #d2d2d7; }
+        :root { 
+            --accent: #1e293b; 
+            --bg-light: #fdfdfd;
+        }
         
-        .product-card { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        /* 只有正常販售的卡片才有懸浮效果 */
-        .active-card:hover { transform: translateY(-8px); }
+        /* 平滑滾動必要指令 */
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
 
-        .img-container { background: #f5f5f7; border-radius: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; }
-        .img-container img { width: 85%; height: 85%; object-fit: contain; transition: transform 0.5s ease; }
+        body { 
+            background-color: var(--bg-light);
+            color: #334155;
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow-x: hidden;
+            letter-spacing: -0.02em;
+        }
+
+        /* 隨滑鼠移動的柔光 */
+        .glow-bg {
+            position: fixed; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.04) 0%, transparent 70%);
+            border-radius: 50%; pointer-events: none; z-index: -1; filter: blur(60px);
+        }
+
+        /* 頂級質感導覽列 */
+        .floating-nav { 
+            background: rgba(255, 255, 255, 0.8) !important; 
+            backdrop-filter: blur(20px) saturate(160%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+            border-radius: 50px !important; margin-top: 20px;
+            width: 90%; max-width: 1100px; left: 50%; transform: translateX(-50%);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 商品卡片優化 */
+        .product-card { opacity: 0; transform: translateY(40px); transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .active-card:hover { transform: translateY(-12px); }
+
+        .img-container { 
+            background: #ffffff; 
+            border: 1px solid rgba(0,0,0,0.04);
+            border-radius: 40px; 
+            aspect-ratio: 1 / 1.1; 
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+        
+        .active-card:hover .img-container { 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.06); 
+            border-color: rgba(0,0,0,0.1);
+        }
+        
+        .active-card img { transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
         .active-card:hover img { transform: scale(1.08); }
+        
+        /* 狀態標籤 */
+        .tag-pill {
+            font-size: 10px; font-weight: 800; letter-spacing: 0.2em;
+            padding: 4px 12px; border-radius: 999px; text-transform: uppercase;
+        }
 
-        /* 灰色邏輯：當 status 為 false 時套用 */
-        .is-disabled { opacity: 0.5; filter: grayscale(100%); pointer-events: none; cursor: not-allowed; }
+        /* 未上架狀態 */
+        .is-disabled { opacity: 0.6; filter: grayscale(40%); cursor: not-allowed; }
+        .is-disabled .img-container { background: #f8fafc; }
+
+        /* 使用者選單動畫樣式 (與 index 同步) */
+        .user-menu {
+            opacity: 0; visibility: hidden; transform: scale(0.95) translateY(10px);
+            position: absolute; right: 0; top: 60px; width: 240px;
+            background: white; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1001;
+        }
+        #auth-section:hover .user-menu { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
     </style>
 </head>
-<body>
+<body class="pt-24">
 
-    <nav class="nav-glass fixed top-0 w-full z-50 px-6 py-3 flex justify-between items-center h-[52px]">
+    <div class="glow-bg" id="cursor-glow"></div>
+
+    <nav class="floating-nav fixed top-0 z-[1000] h-[70px] px-8 flex items-center justify-between">
         <a href="index.html" class="flex items-center group">
-            <img src="photo/S__38223874.jpg" alt="Logo" class="w-7 h-7 rounded-full object-cover ring-1 ring-black/5">
-            <span class="ml-2.5 text-sm font-semibold tracking-tight">Eric Justin</span>
+            <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-all group-hover:rotate-6">
+                <img src="photo/S__38223874.jpg" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <span class="ml-4 text-xl font-black tracking-tighter text-slate-900 uppercase">Eriju</span>
         </a>
-        <div class="flex gap-6 text-xs md:text-sm font-medium">
-            <a href="index.html" class="hover:text-blue-600 transition">首頁</a>
-            <a href="catalog.html" class="text-blue-600 font-bold">全部商品</a>
+        
+        <div class="flex items-center gap-8 text-[13px] font-bold tracking-widest uppercase">
+            <a href="catalog.html" class="text-slate-900 transition underline decoration-2 underline-offset-8">選購</a>
+            <a href="about.html" class="text-slate-400 hover:text-slate-900 transition">關於</a>
+            
+            <div id="auth-section" class="relative">
+                <button id="login-btn" onclick="loginWithGoogle()" class="text-slate-400 hover:text-slate-900 transition font-bold">登入</button>
+            </div>
+
+            <a href="cart.html" class="relative group p-2 text-xl">🛒
+                <span id="cart-dot" class="hidden absolute top-0 right-0 w-2.5 h-2.5 bg-slate-900 border-2 border-white rounded-full"></span>
+            </a>
         </div>
     </nav>
 
-    <main class="max-w-screen-xl mx-auto px-4 md:px-8 py-10">
-        <header class="mb-12 md:mb-20">
-            <h1 class="text-3xl md:text-5xl font-bold tracking-tight text-gray-900">探索所有精緻小卡</h1>
-            <p class="text-gray-500 mt-3 text-lg md:text-xl">從雲端讀取最新的設計收藏。</p>
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] -z-10 opacity-40"></div>
+
+    <main class="max-w-7xl mx-auto px-6 py-20">
+        <header class="mb-24 text-center md:text-left">
+            <span class="text-[11px] font-bold tracking-[0.4em] text-orange-500 uppercase block mb-6">Official Collection</span>
+            <h1 class="text-6xl md:text-8xl font-black tracking-tighter text-slate-900 leading-none">探索所有收藏</h1>
+            <div class="w-16 h-1.5 bg-slate-900 mt-10 mx-auto md:ml-0"></div>
         </header>
 
-        <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-10">
-            <p class="col-span-full text-center py-20 text-gray-400 animate-pulse">正在連接雲端資料庫...</p>
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12 lg:gap-16">
+            <div class="col-span-full text-center py-32">
+                <p class="text-slate-300 font-bold tracking-[0.5em] animate-pulse uppercase text-sm">Synchronizing with Gallery...</p>
+            </div>
         </div>
     </main>
 
-    <footer class="bg-[#f5f5f7] py-16 mt-20 text-center px-6">
-        <p class="text-gray-400 text-xs md:text-sm">© 2026 Eric Justin. 保留所有權利。</p>
-    </footer>
+    <footer class="py-24 text-center border-t border-slate-50">
+    <span class="text-2xl font-black tracking-tighter uppercase mb-6 block text-slate-900">Eriju</span>
+    
+    <div class="max-w-md mx-auto mb-10 px-6">
+        <p class="text-[10px] text-slate-400 leading-loose">
+            本網站為 Eriju 個人創作與技術展示專案。所列商品為測試性販售之原創作品，非公司行號營運。下單前請詳閱專案說明，參與即代表支持個人創作。
+        </p>
+    </div>
 
+    <p class="text-slate-300 text-[11px] tracking-[0.5em] uppercase">© 2026 Eriju Studio. All rights reserved.</p>
+</footer>
     <script>
-        const SUPABASE_URL = 'https://oikubhlwdbxrfhifqusn.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // 1. 初始化 Lenis
+        const lenis = new Lenis();
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
 
+        // 2. Supabase 配置
+        const _supabase = supabase.createClient('https://oikubhlwdbxrfhifqusn.supabase.co', 'sb_publishable_jwPs6RwbH4W4qg1ttjjZog_BcTN8VJy');
+
+        async function loginWithGoogle() {
+            await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+        }
+
+        async function logout() {
+            await _supabase.auth.signOut();
+            location.reload();
+        }
+
+        // 3. 處理登入 UI (包含 Order Records)
+        function handleAuthUI() {
+            const authSection = document.getElementById('auth-section');
+            _supabase.auth.onAuthStateChange((event, session) => {
+                if (session?.user) {
+                    const avatar = session.user.user_metadata.avatar_url || 'photo/S__38223874.jpg';
+                    const fullName = session.user.user_metadata.full_name || 'Premium User';
+                    
+                    authSection.innerHTML = `
+                        <div class="relative group">
+                            <div class="relative cursor-pointer">
+                                <img src="${avatar}" class="w-9 h-9 rounded-xl ring-4 ring-white shadow-sm transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
+                                <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                            </div>
+                            
+                            <div class="user-menu p-3 text-left">
+                                <div class="px-4 py-3 bg-slate-50 rounded-2xl mb-2">
+                                    <p class="text-slate-900 text-[10px] font-black truncate uppercase tracking-widest leading-tight">
+                                        ${fullName}
+                                    </p>
+                                    <p class="text-slate-400 text-[9px] truncate mt-0.5 font-medium">
+                                        ${session.user.email}
+                                    </p>
+                                </div>
+                                
+                                <div class="space-y-1">
+                                    <a href="orders.html" class="flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-all group/item">
+                                        <span class="text-base group-hover/item:scale-110 transition-transform">📦</span> 
+                                        ORDER RECORDS
+                                    </a>
+                                    
+                                    <div class="h-[1px] bg-slate-100 my-1 mx-2"></div>
+                                    
+                                    <button onclick="logout()" 
+                                            class="w-full flex items-center gap-3 p-3 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all group/logout">
+                                        <span class="text-base group-hover/logout:rotate-12 transition-transform">🚪</span> 
+                                        SIGN OUT
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            });
+        }
+
+        // 4. 載入商品函式
         async function loadProducts() {
             const grid = document.getElementById('product-grid');
-            
             try {
-                const { data: products, error } = await _supabase
-                    .from('products')
-                    .select('*');
-
+                const { data: products, error } = await _supabase.from('products').select('*');
                 if (error) throw error;
 
-                if (!products || products.length === 0) {
-                    grid.innerHTML = `<p class="col-span-full text-center py-20 text-gray-400">目前倉庫空空如也...</p>`;
-                    return;
-                }
-
-                // 自動排序邏輯：將 status (Boolean) 為 true 的排在前面
-                products.sort((a, b) => {
-                    const valA = a.status === true ? 1 : 0;
-                    const valB = b.status === true ? 1 : 0;
-                    return valB - valA; 
-                });
-
+                // 排序邏輯：上架中(status:true)排前面
+                products.sort((a, b) => (b.status === true ? 1 : 0) - (a.status === true ? 1 : 0));
+                
                 grid.innerHTML = '';
 
                 products.forEach(product => {
-                    // 只要 status 不是 true (即為 false 或 null)，就變灰色
                     const isInactive = product.status !== true;
-                    const cardStateClass = isInactive ? 'is-disabled' : 'active-card group';
                     
-                    let tagText = product.tag || '精選';
-                    let tagColor = 'text-orange-600';
-
-                    if (isInactive) {
-                        tagText = '暫時缺貨';
-                        tagColor = 'text-gray-400';
-                    }
-
                     grid.innerHTML += `
-                        <div class="product-card ${cardStateClass}">
+                        <div class="product-card ${isInactive ? 'is-disabled' : 'active-card'}">
                             <a href="${isInactive ? '#' : 'buy.html?id=' + product.id}">
-                                <div class="img-container mb-4">
-                                    <img src="${product.image_url}" alt="${product.name}">
+                                <div class="img-container mb-8">
+                                    <img src="${product.image_url}" class="w-[75%] h-[75%] object-contain">
+                                    ${isInactive ? '<div class="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center font-black text-slate-400 tracking-widest text-xs uppercase">Restocking</div>' : ''}
                                 </div>
-                                <div class="px-1">
-                                    <span class="${tagColor} text-[10px] md:text-xs font-bold uppercase tracking-widest">
-                                        ${tagText}
-                                    </span>
-                                    <h3 class="text-base md:text-xl font-bold text-gray-900 leading-tight mt-1">${product.name}</h3>
-                                    
-                                    <p class="text-gray-500 text-xs mt-1 line-clamp-1">
-                                        ${product.description || '點擊查看詳情'}
-                                    </p>
-                                    
-                                    <p class="text-sm md:text-lg font-semibold mt-2 text-black">
-                                        ${isInactive ? '暫未發售' : 'NT$ ' + product.price + ' 起'}
+                                <div class="px-2">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <span class="tag-pill ${isInactive ? 'bg-slate-100 text-slate-300' : 'bg-orange-50 text-orange-600'}">
+                                            ${isInactive ? 'Archive' : (product.tag || 'New Arrival')}
+                                        </span>
+                                    </div>
+                                    <h3 class="text-2xl font-black text-slate-900 tracking-tight mb-2">
+                                        ${product.name}
+                                    </h3>
+                                    <p class="${isInactive ? 'text-slate-300' : 'text-slate-500'} font-bold text-lg">
+                                        ${isInactive ? '暫未發售' : 'NT$ ' + product.price.toLocaleString()}
                                     </p>
                                 </div>
                             </a>
@@ -117,13 +247,42 @@
                     `;
                 });
 
+                // GSAP 入場動畫
+                gsap.to(".product-card", { 
+                    opacity: 1, y: 0, duration: 1.2, 
+                    stagger: 0.1, ease: "expo.out" 
+                });
+
             } catch (err) {
-                console.error("連線出錯:", err);
-                grid.innerHTML = `<p class="col-span-full text-red-500 text-center py-20">連線失敗<br><span class="text-xs text-gray-400">${err.message}</span></p>`;
+                grid.innerHTML = `<p class="col-span-full text-red-400 font-bold text-center">連線失敗，請稍後再試。</p>`;
             }
         }
 
-        loadProducts();
+        // 5. 購物車小紅點
+        function checkCartDot() {
+            const cart = JSON.parse(localStorage.getItem('ej_cart') || '[]');
+            if (cart.length > 0) document.getElementById('cart-dot')?.classList.remove('hidden');
+        }
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            handleAuthUI();
+            loadProducts();
+            checkCartDot();
+
+            // 導覽列縮放動畫
+            ScrollTrigger.create({
+                start: "top -20",
+                onEnter: () => gsap.to(".floating-nav", { marginTop: "0", width: "100%", borderRadius: "0", backgroundColor: "white", duration: 0.5 }),
+                onLeaveBack: () => gsap.to(".floating-nav", { marginTop: "20px", width: "90%", borderRadius: "50px", backgroundColor: "rgba(255,255,255,0.8)", duration: 0.5 })
+            });
+
+            // 滑鼠柔光跟隨
+            document.addEventListener('mousemove', (e) => {
+                gsap.to("#cursor-glow", { x: e.clientX - 300, y: e.clientY - 300, duration: 2, ease: "power2.out" });
+            });
+        });
     </script>
 </body>
 </html>

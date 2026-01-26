@@ -3,88 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>購物車 | Eric Justin Studio</title>
+    <title>Eriju | 購物袋</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; }
-        .glass-nav { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); border-bottom: 0.5px solid #d2d2d7; }
-        .cart-item { background: #fff; border-radius: 18px; transition: transform 0.2s; }
-        .cart-item:hover { transform: scale(1.01); }
-        .rounded-apple { border-radius: 20px; }
-        .img-container { width: 80px; height: 80px; background: #f9f9fb; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
-        .input-apple { width: 100%; padding: 14px; background: #fff; border: 1px solid #d2d2d7; border-radius: 12px; font-size: 15px; outline-color: #0071e3; transition: all 0.2s; }
-        .input-apple:focus { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0,113,227,0.1); }
-        .btn-primary { background: #0071e3; color: white; transition: all 0.3s; }
-        .btn-primary:hover:not(:disabled) { background: #0077ed; transform: translateY(-1px); }
-        .btn-primary:disabled { background: #d2d2d7; cursor: not-allowed; }
+        :root { --bg-light: #fdfdfd; }
+        body { 
+            background-color: var(--bg-light); 
+            color: #334155; 
+            font-family: 'Inter', -apple-system, sans-serif;
+            letter-spacing: -0.02em;
+            padding-top: 80px;
+        }
+
+        /* 導覽列風格 - 保持全站統一 */
+        .floating-nav { 
+            background: rgba(255, 255, 255, 0.8) !important; 
+            backdrop-filter: blur(20px) saturate(160%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+            border-radius: 50px !important; 
+            margin-top: 20px;
+            width: 90%; max-width: 1100px;
+            left: 50%; transform: translateX(-50%);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 使用者選單 - 同步 index 的高級樣式 */
+        .user-menu {
+            opacity: 0; visibility: hidden; transform: scale(0.95) translateY(10px);
+            position: absolute; right: 0; top: 60px; width: 240px;
+            background: white; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1001;
+        }
+        #auth-section:hover .user-menu { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
+
+        .cart-card { 
+            background: white; 
+            border-radius: 32px; 
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+        }
+        .cart-card:hover { border-color: rgba(0,0,0,0.1); transform: translateY(-2px); }
+        
+        .img-container { 
+            width: 100px; height: 100px; 
+            background: #ffffff; 
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 20px; 
+            overflow: hidden; flex-shrink: 0; 
+        }
+
+        .input-eriju { 
+            width: 100%; padding: 16px; 
+            background: #f8fafc; 
+            border: 1px solid #f1f5f9; 
+            border-radius: 18px; 
+            font-size: 14px; 
+            font-weight: 600;
+            outline: none; 
+            transition: all 0.3s ease; 
+        }
+        .input-eriju:focus { 
+            background: #ffffff; 
+            border-color: #1e293b; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); 
+        }
+
+        .btn-checkout { 
+            background: #0f172a; 
+            color: white; 
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .btn-checkout:hover:not(:disabled) { 
+            transform: translateY(-4px) scale(1.02); 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15); 
+        }
+        .btn-checkout:disabled { background: #cbd5e1; cursor: not-allowed; }
     </style>
 </head>
 <body class="pb-20">
 
-    <nav class="glass-nav fixed top-0 w-full z-50 h-[52px] flex items-center px-6">
-        <div class="max-w-screen-xl mx-auto w-full flex justify-between items-center">
-            <a href="index.html" class="font-bold text-sm tracking-tight text-black">Eric Justin</a>
-            <a href="catalog.html" class="text-xs text-blue-600 hover:underline font-medium">繼續選購</a>
+    <nav class="floating-nav fixed top-0 z-[1000] h-[70px] px-8 flex items-center justify-between">
+        <a href="index.html" class="flex items-center group">
+            <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-all group-hover:rotate-6">
+                <img src="photo/S__38223874.jpg" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <span class="ml-4 text-xl font-black tracking-tighter text-slate-900 uppercase">Eriju</span>
+        </a>
+        <div class="flex items-center gap-6 text-[13px] font-bold tracking-widest uppercase">
+            <a href="catalog.html" class="text-slate-400 hover:text-slate-900 transition underline-offset-8">選購</a>
+            
+            <div id="auth-section" class="relative">
+                <button onclick="handleQuickLogin()" class="text-slate-400 hover:text-slate-900 transition">登入</button>
+            </div>
+
+            <a href="cart.html" class="text-slate-900 transition underline decoration-2 underline-offset-8">🛒</a>
         </div>
     </nav>
 
-    <main class="max-w-3xl mx-auto pt-24 px-6">
-        <h1 class="text-3xl md:text-4xl font-bold mb-8 tracking-tight text-gray-900">回顧您的購物袋。</h1>
+    <main class="max-w-3xl mx-auto pt-20 px-6">
+        <header class="mb-12">
+            <span class="text-[11px] font-bold tracking-[0.3em] text-orange-500 uppercase block mb-4">Your Shopping Bag</span>
+            <h1 class="text-5xl font-black tracking-tighter text-slate-900">確認您的訂單。</h1>
+        </header>
 
-        <div id="login-alert" class="hidden mb-8 p-5 bg-blue-50 border border-blue-100 rounded-apple flex justify-between items-center shadow-sm">
+        <div id="login-alert" class="hidden mb-8 p-6 bg-slate-900 rounded-[28px] flex justify-between items-center shadow-xl">
             <div>
-                <p class="text-sm font-bold text-blue-900">使用 Google 帳號結帳</p>
-                <p class="text-xs text-blue-700">登入後即可享有訂單追蹤與安全防護</p>
+                <p class="text-sm font-bold text-white tracking-wide">使用 Google 帳號結帳</p>
+                <p class="text-[11px] text-slate-400 font-medium">登入後即可享有自動填寫與訂單追蹤</p>
             </div>
-            <button onclick="handleQuickLogin()" class="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-blue-700">快速登入</button>
+            <button onclick="handleQuickLogin()" class="bg-white text-slate-900 px-6 py-2.5 rounded-full text-[12px] font-black hover:bg-orange-500 hover:text-white transition-all uppercase">Sign In</button>
         </div>
 
         <div id="cart-list" class="space-y-4">
-            <div class="py-20 text-center text-gray-400">正在同步雲端價格...</div>
+            <div class="py-20 text-center text-slate-300 font-bold tracking-widest animate-pulse">SYNCING DATA...</div>
         </div>
 
-        <div id="shipping-section" class="mt-12 space-y-6 hidden">
-            <h2 class="text-2xl font-bold tracking-tight">寄送詳情。</h2>
-            <div class="bg-white p-6 rounded-apple shadow-sm space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-2 uppercase ml-1">收件人姓名 (限 20 字)</label>
-                    <input type="text" id="cust-name" maxlength="20" placeholder="請輸入收件人真實姓名" class="input-apple">
+        <div id="shipping-section" class="mt-16 space-y-6 hidden">
+            <h2 class="text-2xl font-black tracking-tight text-slate-900">寄送詳情。</h2>
+            <div class="cart-card p-8 space-y-6 shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase ml-1 tracking-widest">Recipient Name</label>
+                        <input type="text" id="cust-name" maxlength="20" placeholder="姓名" class="input-eriju">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase ml-1 tracking-widest">Phone Number</label>
+                        <input type="tel" id="cust-phone" maxlength="15" placeholder="例如：0912345678" class="input-eriju">
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-2 uppercase ml-1">聯絡電話 (限 15 字)</label>
-                    <input type="tel" id="cust-phone" maxlength="15" placeholder="例如：0912345678" class="input-apple">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-2 uppercase ml-1">完整收件地址 (限 100 字)</label>
-                    <textarea id="cust-address" rows="3" maxlength="100" placeholder="請輸入包含郵遞區號的完整地址" class="input-apple"></textarea>
+                    <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase ml-1 tracking-widest">Shipping Address</label>
+                    <textarea id="cust-address" rows="3" maxlength="100" placeholder="包含郵遞區號的完整地址" class="input-eriju"></textarea>
                 </div>
             </div>
         </div>
 
-        <div id="checkout-section" class="mt-12 space-y-4 hidden border-t border-gray-200 pt-8">
-            <div class="flex justify-between text-gray-500 text-sm">
-                <span>小計 (以雲端定價為準)</span>
-                <span id="subtotal">NT$ 0</span>
+        <div id="checkout-section" class="mt-12 space-y-4 hidden border-t border-slate-100 pt-10">
+            <div class="flex justify-between text-slate-400 text-[13px] font-bold tracking-wide uppercase">
+                <span>Subtotal</span>
+                <span id="subtotal" class="text-slate-900">NT$ 0</span>
             </div>
-            <div class="flex justify-between text-gray-500 text-sm">
-                <span>運費</span>
-                <span class="text-green-600 font-medium">免運費</span>
+            <div class="flex justify-between text-slate-400 text-[13px] font-bold tracking-wide uppercase">
+                <span>Shipping</span>
+                <span class="text-orange-500">Free</span>
             </div>
-            <div class="flex justify-between text-2xl font-bold mt-4">
-                <span>總計</span>
-                <span id="grand-total" class="text-black">NT$ 0</span>
+            <div class="flex justify-between text-3xl font-black mt-6 border-t border-slate-50 pt-6">
+                <span class="tracking-tighter">Total</span>
+                <span id="grand-total" class="text-slate-900 tracking-tighter">NT$ 0</span>
             </div>
 
-            <button onclick="processOrder()" id="checkout-btn" class="w-full btn-primary py-4 rounded-apple font-bold text-lg mt-8 shadow-xl shadow-blue-500/20">
-                確認結帳
+            <button onclick="processOrder()" id="checkout-btn" class="w-full btn-checkout py-5 rounded-[24px] font-black text-lg mt-10 uppercase tracking-[0.2em]">
+                Place Order
             </button>
         </div>
 
         <div id="empty-cart" class="hidden py-32 text-center">
-            <div class="text-6xl mb-6">🛒</div>
-            <p class="text-gray-400 text-lg mb-8">您的購物袋是空的。</p>
-            <a href="catalog.html" class="inline-block bg-black text-white px-10 py-3 rounded-full font-bold shadow-lg">去選購作品</a>
+            <p class="text-slate-300 font-black text-2xl mb-8 tracking-tighter">你的購物袋是空的。</p>
+            <a href="catalog.html" class="inline-block bg-slate-900 text-white px-12 py-4 rounded-full font-black text-xs tracking-widest hover:bg-orange-500 transition-all uppercase">挑選一樣</a>
         </div>
     </main>
 
@@ -94,61 +173,125 @@
         let myCart = [];
         let realProducts = []; 
 
-        async function initCart() {
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) {
-                document.getElementById('login-alert').classList.remove('hidden');
-            } else {
-                if(!document.getElementById('cust-name').value) {
-                    document.getElementById('cust-name').value = session.user.user_metadata.full_name || '';
+        // 登入系統 UI 偵測 (同步 index/catalog 樣式)
+        function handleAuthUI() {
+            const authSection = document.getElementById('auth-section');
+            _supabase.auth.onAuthStateChange((event, session) => {
+                if (session?.user) {
+                    const user = session.user;
+                    const avatar = user.user_metadata.avatar_url || 'photo/S__38223874.jpg';
+                    const fullName = user.user_metadata.full_name || 'Premium User';
+
+                    authSection.innerHTML = `
+                        <div class="relative group">
+                            <div class="relative cursor-pointer">
+                                <img src="${avatar}" class="w-9 h-9 rounded-xl ring-4 ring-white shadow-sm transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
+                                <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                            </div>
+                            
+                            <div class="user-menu p-3 text-left">
+                                <div class="px-4 py-3 bg-slate-50 rounded-2xl mb-2">
+                                    <p class="text-slate-900 text-[10px] font-black truncate uppercase tracking-widest leading-tight">
+                                        ${fullName}
+                                    </p>
+                                    <p class="text-slate-400 text-[9px] truncate mt-0.5 font-medium">
+                                        ${user.email}
+                                    </p>
+                                </div>
+                                
+                                <div class="space-y-1">
+                                    <a href="orders.html" class="flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-all group/item">
+                                        <span class="text-base group-hover/item:scale-110 transition-transform">📦</span> 
+                                        ORDER RECORDS
+                                    </a>
+                                    
+                                    <div class="h-[1px] bg-slate-100 my-1 mx-2"></div>
+                                    
+                                    <button onclick="logout()" 
+                                            class="w-full flex items-center gap-3 p-3 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all group/logout">
+                                        <span class="text-base group-hover/logout:rotate-12 transition-transform">🚪</span> 
+                                        SIGN OUT
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                    document.getElementById('login-alert').classList.add('hidden');
+                } else {
+                    authSection.innerHTML = `<button onclick="handleQuickLogin()" class="text-slate-400 hover:text-slate-900 transition font-bold">Sign In</button>`;
+                    document.getElementById('login-alert').classList.remove('hidden');
                 }
-            }
-            const { data: products, error } = await _supabase.from('products').select('*');
-            if (error) return;
-            realProducts = products;
-            const savedCart = localStorage.getItem('ej_cart');
-            if (savedCart && JSON.parse(savedCart).length > 0) {
-                myCart = JSON.parse(savedCart);
-                myCart = myCart.map(item => {
-                    const realItem = realProducts.find(p => p.id === item.id);
-                    // 同步雲端最新的名稱與價格，同時保留本地暫存的圖片路徑作為後備
-                    return realItem ? { ...item, price: realItem.price, name: realItem.name, image: realItem.image_url || item.image } : item;
-                });
-                renderCart();
-            } else { showEmpty(); }
+            });
+        }
+
+        async function logout() {
+            await _supabase.auth.signOut();
+            location.reload();
         }
 
         async function handleQuickLogin() {
-            const { error } = await _supabase.auth.signInWithOAuth({
+            await _supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo: window.location.href }
             });
+        }
+
+        async function initCart() {
+            // 自動填入姓名
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session && !document.getElementById('cust-name').value) {
+                document.getElementById('cust-name').value = session.user.user_metadata.full_name || '';
+            }
+
+            const { data: products, error } = await _supabase.from('products').select('*');
+            if (error) return;
+            realProducts = products;
+
+            const savedCart = localStorage.getItem('ej_cart');
+            if (savedCart && JSON.parse(savedCart).length > 0) {
+                myCart = JSON.parse(savedCart);
+                // 重新校準資料（防止價格被篡改）
+                myCart = myCart.map(item => {
+                    const realItem = realProducts.find(p => p.id === item.id);
+                    return realItem ? { ...item, price: realItem.price, name: realItem.name, image: realItem.image_url || item.image } : item;
+                });
+                renderCart();
+            } else { 
+                showEmpty(); 
+            }
         }
 
         function renderCart() {
             const list = document.getElementById('cart-list');
             list.innerHTML = '';
             let total = 0;
+            
             if (myCart.length === 0) { showEmpty(); return; }
+
             myCart.forEach((item, index) => {
                 total += item.price * item.qty;
                 list.innerHTML += `
-                    <div class="cart-item p-5 flex gap-5 items-center shadow-sm">
-                        <div class="img-container"><img src="${item.image || 'photo/S__38223874.jpg'}" class="w-full h-full object-cover"></div>
+                    <div class="cart-card p-6 flex gap-6 items-center shadow-sm">
+                        <div class="img-container">
+                            <img src="${item.image || 'photo/S__38223874.jpg'}" class="w-full h-full object-contain p-2">
+                        </div>
                         <div class="flex-grow">
-                            <h3 class="font-bold text-base leading-tight">${item.name}</h3>
-                            <div class="flex items-center gap-4 mt-3">
-                                <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 font-bold">數量: ${item.qty}</span>
-                                <button onclick="removeItem(${index})" class="text-xs text-red-500 font-medium hover:underline">移除</button>
+                            <h3 class="font-black text-slate-900 text-lg leading-tight tracking-tight">${item.name}</h3>
+                            <div class="flex items-center gap-6 mt-3">
+                                <span class="text-[10px] bg-slate-50 px-3 py-1.5 rounded-lg text-slate-400 font-black uppercase tracking-widest">Qty: ${item.qty}</span>
+                                <button onclick="removeItem(${index})" class="text-[10px] text-red-400 font-black uppercase tracking-widest hover:text-red-600 transition">Remove</button>
                             </div>
                         </div>
-                        <div class="text-right"><p class="font-bold text-gray-900">NT$ ${(item.price * item.qty).toLocaleString()}</p></div>
+                        <div class="text-right">
+                            <p class="font-black text-slate-900 tracking-tighter">NT$ ${(item.price * item.qty).toLocaleString()}</p>
+                        </div>
                     </div>`;
             });
+
             document.getElementById('subtotal').innerText = `NT$ ${total.toLocaleString()}`;
             document.getElementById('grand-total').innerText = `NT$ ${total.toLocaleString()}`;
             document.getElementById('checkout-section').classList.remove('hidden');
             document.getElementById('shipping-section').classList.remove('hidden');
+            document.getElementById('cart-list').classList.remove('hidden');
             document.getElementById('empty-cart').classList.add('hidden');
         }
 
@@ -161,39 +304,30 @@
         function showEmpty() {
             document.getElementById('checkout-section').classList.add('hidden');
             document.getElementById('shipping-section').classList.add('hidden');
+            document.getElementById('cart-list').classList.add('hidden');
             document.getElementById('empty-cart').classList.remove('hidden');
         }
 
         async function processOrder() {
-            const name = document.getElementById('cust-name').value.trim().substring(0, 20);
-            const phone = document.getElementById('cust-phone').value.trim().substring(0, 15);
-            const address = document.getElementById('cust-address').value.trim().substring(0, 100);
+            const name = document.getElementById('cust-name').value.trim();
+            const phone = document.getElementById('cust-phone').value.trim();
+            const address = document.getElementById('cust-address').value.trim();
 
             if (!name || !phone || !address) { alert("請填寫完整收件詳情"); return; }
 
             const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) { alert("請先登入"); return; }
+            if (!session) { alert("請先登入帳號再結帳"); return; }
 
             const btn = document.getElementById('checkout-btn');
             btn.disabled = true;
-            btn.innerText = "驗證並建立訂單...";
+            btn.innerText = "Processing...";
 
             let finalTotal = 0;
-            // 【核心修正點】確保將 image 路徑存入 finalItems 陣列
             const finalItems = myCart.map(item => {
                 const real = realProducts.find(p => p.id === item.id);
                 const price = real ? real.price : 0;
-                // 優先使用雲端資料庫的圖片欄位 (image_url)
-                const img = real?.image_url || item.image || 'photo/S__38223874.jpg';
-                
                 finalTotal += price * item.qty;
-                return { 
-                    id: item.id, 
-                    name: item.name, 
-                    price: price, 
-                    qty: item.qty,
-                    image: img // 存入這行後，orders.html 才能讀到正確圖片
-                };
+                return { id: item.id, name: item.name, price: price, qty: item.qty, image: real?.image_url || item.image };
             });
 
             const orderData = {
@@ -207,30 +341,33 @@
             };
 
             try {
-                const { data: newOrder, error: dbError } = await _supabase
-                    .from('orders')
-                    .insert([orderData])
-                    .select()
-                    .single();
-
+                const { data: newOrder, error: dbError } = await _supabase.from('orders').insert([orderData]).select().single();
                 if (dbError) throw dbError;
-
-                btn.innerText = "發送雲端稽核通知...";
                 
-                await _supabase.functions.invoke('notify-discord', {
-                    body: { order_id: newOrder.id }
-                });
+                // Discord 通知（如有串接）
+                await _supabase.functions.invoke('notify-discord', { body: { order_id: newOrder.id } }).catch(()=>{});
                 
                 localStorage.removeItem('ej_cart');
-                alert("🎉 訂單成功！");
+                alert("🎉 訂單已建立！感謝您的購買。");
                 location.href = "orders.html";
             } catch (err) {
-                alert("失敗：" + err.message);
+                alert("下單失敗：" + err.message);
                 btn.disabled = false;
-                btn.innerText = "確認結帳";
+                btn.innerText = "Place Order";
             }
         }
-        initCart();
+
+        gsap.registerPlugin(ScrollTrigger);
+        window.addEventListener('DOMContentLoaded', () => {
+            handleAuthUI();
+            initCart();
+            
+            ScrollTrigger.create({
+                start: "top -20",
+                onEnter: () => gsap.to(".floating-nav", { marginTop: "0px", width: "100%", borderRadius: "0px", backgroundColor: "white", duration: 0.5 }),
+                onLeaveBack: () => gsap.to(".floating-nav", { marginTop: "20px", width: "90%", borderRadius: "50px", backgroundColor: "rgba(255, 255, 255, 0.8)", duration: 0.5 })
+            });
+        });
     </script>
 </body>
 </html>
