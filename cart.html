@@ -256,21 +256,44 @@
             if (!session) return alert("請先登入帳號");
 
             const btn = document.getElementById('checkout-btn');
-            btn.disabled = true; btn.innerText = "Processing...";
+            btn.disabled = true; 
+            btn.innerText = "Processing...";
 
+            const totalAmount = myCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             const orderData = {
                 user_email: session.user.email,
                 user_name: name,
                 user_phone: phone,
                 shipping_address: address,
                 items: myCart,
-                total_amount: myCart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+                total_amount: totalAmount,
                 status: 'pending'
             };
 
+            // 1. 寫入資料庫
             const { data, error } = await _supabase.from('orders').insert([orderData]).select().single();
-            if (error) { alert("下單失敗"); btn.disabled = false; btn.innerText = "Place Order"; }
-            else { 
+            
+            if (error) { 
+                alert("下單失敗"); 
+                btn.disabled = false; 
+                btn.innerText = "Place Order"; 
+            } else { 
+                // 2. 呼叫 Edge Function 發送 DC 通知
+                try {
+                    // 請確認你的 Supabase Function 名稱為 'notify-discord'
+                    await _supabase.functions.invoke('notify-discord', {
+                        body: { 
+                            orderId: data.id,
+                            name: name,
+                            phone: phone,
+                            total: totalAmount,
+                            items: myCart.map(i => `${i.name} (x${i.qty})`).join(', ')
+                        }
+                    });
+                } catch (err) {
+                    console.error("DC 通知發送失敗:", err);
+                }
+
                 localStorage.removeItem('ej_cart'); 
                 alert("🎉 訂單已建立！"); 
                 location.href = "orders.html"; 
