@@ -56,29 +56,17 @@ export default function Navbar() {
       <nav className="fixed top-0 left-1/2 -translate-x-1/2 mt-5 w-[92%] max-w-[1100px] h-[72px] bg-white/80 backdrop-blur-2xl border border-white/40 rounded-full flex items-center justify-between px-6 z-[1000] shadow-[0_8px_32px_rgba(0,0,0,0.05)] transition-all">
         
         {/* Logo 區塊 */}
-            <Link href="/" className="flex items-center gap-2 group">
-        {/* 標誌圖形 (3.png) */}
-        <div className="relative h-8 w-8 overflow-hidden">
-          <Image 
-            src="https://oikubhlwdbxrfhifqusn.supabase.co/storage/v1/object/public/assets/3.png" 
-            alt="Eriju Logo Icon" 
-            fill 
-            className="object-contain" // 改用 contain 確保 Logo 不會被裁切
-            priority // 導航欄圖片建議加這個，載入更快
-          />
-        </div>
-
-        {/* 品牌文字 (5.png) */}
-        <div className="relative h-5 w-24"> 
-          <Image 
-            src="https://oikubhlwdbxrfhifqusn.supabase.co/storage/v1/object/public/assets/5.png" 
-            alt="Eriju" 
-            fill 
-            className="object-contain"
-            priority
-          />
-        </div>
-    </Link>
+        <Link href="/" className="flex items-center group">
+          <div className="w-11 h-11 rounded-2xl overflow-hidden relative shadow-md transition-all group-hover:rotate-6 active:scale-90">
+            <Image 
+              src="https://oikubhlwdbxrfhifqusn.supabase.co/storage/v1/object/public/assets/3.png" 
+              alt="Eriju Logo" 
+              fill 
+              className="object-cover" 
+            />
+          </div>
+          <span className="ml-3 text-xl font-black tracking-tighter text-slate-900 uppercase italic">Eriju</span>
+        </Link>
 
         {/* 右側按鈕與功能區 */}
         <div className="flex items-center gap-3">
