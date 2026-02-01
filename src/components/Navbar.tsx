@@ -59,7 +59,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center group">
           <div className="w-11 h-11 rounded-2xl overflow-hidden relative shadow-md transition-all group-hover:rotate-6 active:scale-90">
             <Image 
-              src="https://oikubhlwdbxrfhifqusn.supabase.co/storage/v1/object/public/assets/S__38223874.jpg" 
+              src="https://oikubhlwdbxrfhifqusn.supabase.co/storage/v1/object/public/assets/icon.png" 
               alt="Eriju Logo" 
               fill 
               className="object-cover" 
