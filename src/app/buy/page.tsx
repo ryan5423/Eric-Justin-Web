@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import gsap from "gsap";
-import Lenis from "@studio-freight/lenis";
+import Lenis from "lenis";
 
 // --- 子組件：規格確認面板 ---
 function SpecPanel({ isOpen, onClose, qty, setQty, agreed, setAgreed, price, onConfirm }: any) {
