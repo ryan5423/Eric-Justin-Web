@@ -137,7 +137,7 @@ export default function HomePage() {
           <div className="reveal opacity-0 translate-y-10 relative overflow-hidden rounded-[60px] bg-slate-900 min-h-[500px] flex items-center group">
             <div className="absolute inset-0 opacity-50">
               <Image 
-                src="https://oikubhlwdbxrfhifqusn.supabase.co/storage/v1/object/public/assets/S__38223874.jpg" 
+                src="https://oikubhlwdbxrfhifqusn.supabase.co/storage/v1/object/public/assets/3.png" 
                 alt="Background" 
                 fill 
                 className="w-full h-full object-cover scale-110 transition-transform duration-[2s] group-hover:scale-100" 
