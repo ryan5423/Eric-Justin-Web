@@ -48,3 +48,13 @@ body {
 .release-card:hover {
   @apply -translate-y-3 shadow-2xl;
 }
+  /* 隱藏 Chrome, Safari 和 Opera 的滾動條 */
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* 隱藏 IE, Edge 和 Firefox 的滾動條 */
+  html, body {
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;  /* Firefox */
+  }

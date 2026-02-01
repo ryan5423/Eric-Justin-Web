@@ -20,31 +20,49 @@ export default function CartPage() {
     address: ""
   });
 
+  const getImageUrl = (path: string) => {
+    if (!path || path === "null" || path === "") return null;
+    if (path.startsWith("http")) return path;
+    const { data } = supabase.storage.from("assets").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   useEffect(() => {
     const initPage = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (session?.user) {
-        setUser(session.user);
+        const currentUser = session.user;
+        setUser(currentUser);
         setForm(f => ({ 
           ...f, 
-          name: session.user.user_metadata.full_name || "" 
+          name: currentUser.user_metadata?.full_name || "" 
         }));
-      }
 
-      const savedCart = JSON.parse(localStorage.getItem("ej_cart") || "[]");
-      if (savedCart.length > 0) {
-        const { data: products } = await supabase.from("products").select("*");
-        const updatedCart = savedCart.map((item: any) => {
-          const real = products?.find(p => p.id === item.id);
-          return real ? { 
-            ...item, 
-            price: real.price, 
-            name: real.name, 
-            image: real.image_url 
-          } : item;
-        });
-        setCart(updatedCart);
-        localStorage.setItem("ej_cart", JSON.stringify(updatedCart));
+        const { data: dbCart, error } = await supabase
+          .from("cart")
+          .select(`
+            quantity,
+            product_id,
+            products ( id, name, price, original_price, image_url )
+          `)
+          .eq("user_id", currentUser.id);
+
+        if (!error && dbCart) {
+          const formattedCart = dbCart.map((item: any) => ({
+            id: item.product_id,
+            qty: item.quantity,
+            name: item.products.name,
+            price: item.products.price,
+            original_price: item.products.original_price,
+            image: getImageUrl(item.products.image_url)
+          }));
+          setCart(formattedCart);
+          localStorage.setItem("ej_cart", JSON.stringify(formattedCart));
+        }
+      } else {
+        const savedCart = JSON.parse(localStorage.getItem("ej_cart") || "[]");
+        setCart(savedCart);
       }
       
       setLoading(false);
@@ -60,24 +78,39 @@ export default function CartPage() {
     initPage();
   }, []);
 
-  const updateQty = (id: string, delta: number) => {
+  const updateQty = async (id: any, delta: number) => {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+
+    const newQty = Math.max(1, item.qty + delta);
     gsap.fromTo(`#item-${id}`, { scale: 1 }, { scale: 1.02, duration: 0.1, yoyo: true, repeat: 1 });
-    const newCart = cart.map(item => {
-      if (item.id === id) {
-        const newQty = Math.max(1, item.qty + delta);
-        return { ...item, qty: newQty };
+
+    if (user) {
+      const { error } = await supabase
+        .from('cart')
+        .update({ quantity: newQty })
+        .eq('user_id', user.id)
+        .eq('product_id', id);
+      
+      if (error) {
+        alert(error.message);
+        return;
       }
-      return item;
-    });
+    }
+
+    const newCart = cart.map(i => i.id === id ? { ...i, qty: newQty } : i);
     setCart(newCart);
     localStorage.setItem("ej_cart", JSON.stringify(newCart));
     window.dispatchEvent(new Event("storage"));
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = async (id: any) => {
     gsap.to(`#item-${id}`, {
       x: -20, opacity: 0, scale: 0.95, duration: 0.4,
-      onComplete: () => {
+      onComplete: async () => {
+        if (user) {
+          await supabase.from('cart').delete().eq('user_id', user.id).eq('product_id', id);
+        }
         const newCart = cart.filter(item => item.id !== id);
         setCart(newCart);
         localStorage.setItem("ej_cart", JSON.stringify(newCart));
@@ -88,19 +121,11 @@ export default function CartPage() {
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
-  // --- 核心：修正後的成功動畫與跳轉流程 ---
   const runSuccessRitual = () => {
     setShowSuccess(true);
-    
-    // 強制 UI 渲染後再執行 GSAP
     setTimeout(() => {
       const tl = gsap.timeline();
-      
-      tl.to(".success-overlay", { 
-        opacity: 1, 
-        duration: 0.6, 
-        ease: "power3.out" 
-      })
+      tl.to(".success-overlay", { opacity: 1, duration: 0.6, ease: "power3.out" })
       .fromTo(".success-check", 
         { scale: 0, rotate: -30, opacity: 0 }, 
         { scale: 1, rotate: 0, opacity: 1, duration: 0.8, ease: "back.out(2)" }
@@ -113,22 +138,23 @@ export default function CartPage() {
       .to(".success-overlay", { 
         opacity: 0, 
         duration: 0.8, 
-        delay: 1.5, // 停留時間
-        onComplete: () => {
-          router.push("/orders");
-        }
+        delay: 1.5,
+        onComplete: () => { router.push("/orders"); }
       });
     }, 10);
   };
 
   const processOrder = async () => {
-    if (!user || !form.name || !form.phone || !form.address) return;
+    if (!user || !form.name || !form.phone || !form.address) {
+      alert("請完整填寫收件資訊並確保已登入");
+      return;
+    }
 
     setIsProcessing(true);
     
     const orderData = {
-      user_email: user.email,
       user_name: form.name,
+      user_email: user.email,
       user_phone: form.phone,
       shipping_address: form.address,
       items: cart,
@@ -137,32 +163,36 @@ export default function CartPage() {
     };
 
     try {
+      // 1. 先送到 Supabase
       const { data, error } = await supabase.from('orders').insert([orderData]).select().single();
       if (error) throw error;
 
+      // 2. 調用 API Route 通知，格式完全對齊你的 route.ts (加入 address 與 email)
       await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          order_id: data.id,
+        body: JSON.stringify({
+          order_id: data.id, 
           name: form.name,
+          email: user.email,
           phone: form.phone,
+          address: form.address,
           total: subtotal,
-          items: cart.map(i => `${i.name} (x${i.qty})`).join(', ')
+          items: cart.map(i => `• ${i.name} x ${i.qty}`).join('\n')
         })
-      });
+      }).catch(err => console.error("通知路由調用失敗:", err));
 
-      // 訂單完成後的清理
+      // 3. 清理購物車
       localStorage.removeItem('ej_cart');
+      await supabase.from('cart').delete().eq('user_id', user.id);
       window.dispatchEvent(new Event("storage"));
 
-      // 執行儀式動畫 (跳轉會在動畫完成後觸發)
       runSuccessRitual();
 
     } catch (err: any) {
       console.error(err);
       setIsProcessing(false);
-      alert("訂單送出失敗，請稍後再試");
+      alert("訂單送出失敗：" + err.message);
     }
   };
 
@@ -176,17 +206,13 @@ export default function CartPage() {
   return (
     <div className="bg-[#fcfcfc] min-h-screen pt-32 pb-24 text-slate-900 overflow-x-hidden">
       
-      {/* 成功儀式層 - 移除了 pointer-events-none 以免動畫被阻擋 */}
       {showSuccess && (
         <div className="success-overlay fixed inset-0 z-[2000] bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center opacity-0">
           <div className="relative flex items-center justify-center">
-            {/* 虛擬煙火粒子 */}
             <div className="firework absolute top-0 left-0 w-3 h-3 bg-amber-400 rounded-full blur-[2px]" />
             <div className="firework absolute bottom-10 right-10 w-4 h-4 bg-orange-500 rounded-full blur-[2px]" />
             <div className="firework absolute -top-20 right-10 w-2 h-2 bg-yellow-300 rounded-full blur-[1px]" />
             <div className="firework absolute bottom-0 -left-20 w-5 h-5 bg-slate-200 rounded-full blur-[3px]" />
-            
-            {/* 打勾圓圈 */}
             <div className="success-check w-32 h-32 bg-slate-900 rounded-full flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
               <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
@@ -228,8 +254,15 @@ export default function CartPage() {
                       <button onClick={() => removeItem(item.id)} className="text-[10px] text-slate-400 font-black uppercase hover:text-red-500 transition underline underline-offset-4 decoration-1">移除品項</button>
                     </div>
                   </div>
-                  <div className="text-right font-black text-slate-900 text-lg tracking-tighter">
-                    NT$ {(item.price * item.qty).toLocaleString()}
+                  <div className="text-right flex flex-col items-end">
+                    {item.original_price && item.original_price > item.price && (
+                      <span className="text-[10px] text-slate-400 line-through font-bold mb-1 italic">
+                        NT$ {(item.original_price * item.qty).toLocaleString()}
+                      </span>
+                    )}
+                    <div className="font-black text-slate-900 text-lg tracking-tighter">
+                      NT$ {(item.price * item.qty).toLocaleString()}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -250,7 +283,7 @@ export default function CartPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-[0.2em]">寄送地址 Shipping Address</label>
-                  <textarea rows={3} value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="請輸入包含郵遞區號的完整地址(限台灣地區)" className="w-full p-5 bg-slate-50 border border-transparent rounded-[22px] text-sm font-bold outline-none focus:bg-white focus:border-slate-900 transition-all resize-none" />
+                  <textarea rows={3} value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="請輸入完整地址(台灣地區)" className="w-full p-5 bg-slate-50 border border-transparent rounded-[22px] text-sm font-bold outline-none focus:bg-white focus:border-slate-900 transition-all resize-none" />
                 </div>
               </div>
             </section>
@@ -270,11 +303,11 @@ export default function CartPage() {
                 disabled={isProcessing || !user}
                 className={`w-full py-7 rounded-[32px] font-black text-lg mt-12 uppercase tracking-[0.3em] transition-all duration-700 shadow-xl ${
                   isProcessing || !user 
-                  ? 'bg-slate-100 text-slate-300' 
+                  ? 'bg-slate-100 text-slate-300 cursor-not-allowed' 
                   : 'bg-slate-900 text-white hover:bg-[#d98b5f]'
                 }`}
               >
-                {isProcessing ? "訂單處理中..." : "送出訂單"}
+                {!user ? "請先登入帳號" : isProcessing ? "訂單處理中..." : "送出訂單"}
               </button>
             </section>
           </>

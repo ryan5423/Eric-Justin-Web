@@ -11,7 +11,7 @@ const OrderCard = ({ order, onRefresh }: { order: any; onRefresh: () => void }) 
   const [isOpen, setIsOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  // 定義詳細狀態與進度描述 (新增了取消相關狀態)
+  // 定義詳細狀態與進度描述
   const statusStyles: any = {
     pending: { label: "訂單已受理", detail: "職人正在準備材料，請稍候", bg: "bg-amber-400", text: "text-amber-600", step: 1 },
     processing: { label: "工藝製作中", detail: "您的作品正在手工打造中", bg: "bg-blue-500", text: "text-blue-600", step: 2 },
@@ -25,7 +25,33 @@ const OrderCard = ({ order, onRefresh }: { order: any; onRefresh: () => void }) 
   const items = order.items || [];
   const firstItem = items[0] || {};
 
-  // --- 新增：申請取消邏輯 ---
+  // --- 通用通知邏輯 ---
+  const sendOrderNotification = async (type: 'CANCELLATION_REQUEST' | 'ORDER_COMPLETED', reason?: string) => {
+    try {
+      const isCancel = type === 'CANCELLATION_REQUEST';
+      const payload = {
+        order_id: order.id,
+        name: order.user_name,
+        email: order.user_email,
+        phone: order.user_phone,
+        address: isCancel ? `🛑 取消原因：${reason}` : `✅ 客戶已確認收件 (地址: ${order.shipping_add || order.shipping_address})`,
+        total: order.total_amount,
+        items: `${isCancel ? "⚠️ 【收到取消申請】" : "🎉 【訂單已結案】"}\n` + 
+               items.map((item: any) => `• ${item.name} x ${item.qty}`).join("\n"),
+        status: isCancel ? "cancelling" : "completed" // 供後端 route.ts 識別顏色
+      };
+
+      await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.error("Failed to send notification:", err);
+    }
+  };
+
+  // --- 申請取消邏輯 ---
   const handleRequestCancel = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const reason = window.prompt("請輸入取消原因 (必填):");
@@ -42,6 +68,10 @@ const OrderCard = ({ order, onRefresh }: { order: any; onRefresh: () => void }) 
         .eq("id", order.id);
 
       if (error) throw error;
+
+      // 發送通知給職人
+      await sendOrderNotification('CANCELLATION_REQUEST', reason);
+
       alert("申請已送出，請靜候審核");
       onRefresh();
     } catch (err: any) {
@@ -51,7 +81,7 @@ const OrderCard = ({ order, onRefresh }: { order: any; onRefresh: () => void }) 
     }
   };
 
-  // --- 原有：確認收貨邏輯 ---
+  // --- 確認收貨邏輯 ---
   const handleFinish = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!window.confirm("確認已經收到作品，並將此訂單移至歷史紀錄嗎？")) return;
@@ -64,6 +94,9 @@ const OrderCard = ({ order, onRefresh }: { order: any; onRefresh: () => void }) 
         .eq("id", order.id);
 
       if (error) throw error;
+
+      // 發送結案通知
+      await sendOrderNotification('ORDER_COMPLETED');
       
       setTimeout(() => {
         onRefresh();
@@ -90,6 +123,7 @@ const OrderCard = ({ order, onRefresh }: { order: any; onRefresh: () => void }) 
             <img 
               src={firstItem.image || firstItem.image_url || "/photo/S__38223874.jpg"} 
               className="w-16 h-16 md:w-24 md:h-24 object-cover rounded-[24px] bg-slate-50" 
+              alt="order preview"
             />
             {items.length > 1 && (
               <div className="absolute -top-2 -right-2 bg-slate-900 text-white text-[10px] w-7 h-7 flex items-center justify-center rounded-full font-black border-4 border-white">
@@ -168,7 +202,7 @@ const OrderCard = ({ order, onRefresh }: { order: any; onRefresh: () => void }) 
               </div>
             </div>
             
-            {/* 動態按鈕區 (整合了確認收貨與取消申請) */}
+            {/* 按鈕區 */}
             <div className="space-y-4">
                 {order.status === "delivered" ? (
                 <button 
@@ -195,7 +229,6 @@ const OrderCard = ({ order, onRefresh }: { order: any; onRefresh: () => void }) 
                 <div className="text-center py-8 bg-slate-50 rounded-[24px] border border-slate-100">
                     <p className="text-slate-400 text-[10px] font-black tracking-[0.5em] uppercase italic animate-pulse mb-4">{currentStatus.detail}</p>
                     
-                    {/* 只有在尚未發貨前 (pending/processing) 顯示取消按鈕 */}
                     {(order.status === "pending" || order.status === "processing") && (
                         <button 
                             onClick={handleRequestCancel}
@@ -257,7 +290,6 @@ function OrdersContent() {
     return () => lenis.destroy();
   }, [fetchData, router]);
 
-  // 過濾邏輯：active 包含尚未結束的所有訂單；history 包含完成與取消的訂單
   const filteredOrders = orders.filter(o => 
     view === "active" 
       ? (o.status !== "completed" && o.status !== "cancelled") 
