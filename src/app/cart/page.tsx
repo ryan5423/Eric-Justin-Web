@@ -104,17 +104,20 @@ export default function CartPage() {
     window.dispatchEvent(new Event("storage"));
   };
 
-  const removeItem = async (id: any) => {
+  // 這裡修正了編譯錯誤：將 async 移到內部
+  const removeItem = (id: any) => {
     gsap.to(`#item-${id}`, {
       x: -20, opacity: 0, scale: 0.95, duration: 0.4,
-      onComplete: async () => {
-        if (user) {
-          await supabase.from('cart').delete().eq('user_id', user.id).eq('product_id', id);
-        }
-        const newCart = cart.filter(item => item.id !== id);
-        setCart(newCart);
-        localStorage.setItem("ej_cart", JSON.stringify(newCart));
-        window.dispatchEvent(new Event("storage"));
+      onComplete: () => {
+        (async () => {
+          if (user) {
+            await supabase.from('cart').delete().eq('user_id', user.id).eq('product_id', id);
+          }
+          const newCart = cart.filter(item => item.id !== id);
+          setCart(newCart);
+          localStorage.setItem("ej_cart", JSON.stringify(newCart));
+          window.dispatchEvent(new Event("storage"));
+        })();
       }
     });
   };
@@ -163,11 +166,9 @@ export default function CartPage() {
     };
 
     try {
-      // 1. 先送到 Supabase
       const { data, error } = await supabase.from('orders').insert([orderData]).select().single();
       if (error) throw error;
 
-      // 2. 調用 API Route 通知，格式完全對齊你的 route.ts (加入 address 與 email)
       await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -180,9 +181,8 @@ export default function CartPage() {
           total: subtotal,
           items: cart.map(i => `• ${i.name} x ${i.qty}`).join('\n')
         })
-      }).catch(err => console.error("通知路由調用失敗:", err));
+      }).catch(err => console.error("通知失敗:", err));
 
-      // 3. 清理購物車
       localStorage.removeItem('ej_cart');
       await supabase.from('cart').delete().eq('user_id', user.id);
       window.dispatchEvent(new Event("storage"));
@@ -283,7 +283,7 @@ export default function CartPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-[0.2em]">寄送地址 Shipping Address</label>
-                  <textarea rows={3} value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="請輸入完整地址(台灣地區)" className="w-full p-5 bg-slate-50 border border-transparent rounded-[22px] text-sm font-bold outline-none focus:bg-white focus:border-slate-900 transition-all resize-none" />
+                  <textarea rows={3} value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="請輸入完整地址" className="w-full p-5 bg-slate-50 border border-transparent rounded-[22px] text-sm font-bold outline-none focus:bg-white focus:border-slate-900 transition-all resize-none" />
                 </div>
               </div>
             </section>
